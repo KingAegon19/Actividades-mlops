@@ -9,10 +9,15 @@
 ```
 actividad-1/
 ├── configs/config.yaml   # datos, modelo y MLflow/Prefect (sin valores en el código)
+├── docs/diccionario-datos.md   # qué es cada columna del dataset
 ├── flows/                # flow de Prefect: cargar datos → entrenar → resumen
-├── src/                  # código del caso de uso (carga de datos, modelo, etc.)
+├── src/
+│   ├── config.py         # carga de configs/config.yaml
+│   ├── datos.py          # carga + validación de columnas + agrupa categorías sin documentar
+│   ├── modelo.py          # fábrica de modelos (logistic_regression, random_forest)
+│   └── modelado.py        # partición estratificada y métricas binarias
 ├── notebooks/            # exploración
-├── tests/                # pruebas de carga de datos
+├── tests/                # pruebas unitarias (usan tests/fixtures/credit_sample.csv, no el dataset real)
 ├── poetry.lock
 └── pyproject.toml
 ```
@@ -39,8 +44,12 @@ poetry run python flows/experimento_flow.py
 
 ## Pendiente
 
-- [ ] Definir caso de uso propio (o dataset de Kaggle).
-- [ ] `generate_data.py` (si el dataset es simulado) o carga del dataset real en `src/`.
+- [x] Definir caso de uso propio (default de tarjeta de crédito).
+- [x] Carga y validación del dataset real en `src/` (con pruebas unitarias).
 - [ ] Flow de Prefect (`flows/experimento_flow.py`).
 - [ ] Tracking con MLflow.
 - [ ] Memoria 1 (plantilla del curso).
+
+## Nota sobre el baseline
+
+Un `LogisticRegression` sin escalar features da `ConvergenceWarning` (las columnas `BILL_AMT*`/`PAY_AMT*` están en una escala de miles/millones frente a `SEX`/`EDUCATION`). Queda pendiente decidir si se agrega un `StandardScaler` o se usa un modelo que no lo necesite (ej. `random_forest`).
