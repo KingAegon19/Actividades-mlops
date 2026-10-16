@@ -1,8 +1,8 @@
 # Actividad 1: Fundamentos, versionamiento y tracking
 
-**Caso de uso:** predicción de quiebra/insolvencia de empresas a partir de ratios financieros (liquidez, apalancamiento, rentabilidad), relevante para análisis contable/financiero.
+**Caso de uso:** predicción de incumplimiento de pago (default) de clientes de tarjeta de crédito, a partir de su historial de pagos, límite de crédito y estados de cuenta — relevante para riesgo de crédito y cuentas por cobrar.
 
-**Dataset:** [Company Bankruptcy Prediction](https://www.kaggle.com/datasets/fedesoriano/company-bankruptcy-prediction) (Taiwan Economic Journal, 1999-2009). 95 ratios financieros + columna objetivo `Bankrupt?`. Descargar el CSV y colocarlo en `data/company_bankruptcy.csv` (requiere cuenta gratuita de Kaggle; no se versiona en git por tamaño).
+**Dataset:** [Default of Credit Card Clients](https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset) (UCI, Taiwan). 30,000 clientes, 23 variables (límite de crédito, historial de pagos `PAY_0`-`PAY_6`, montos de factura `BILL_AMT1`-`6`, pagos `PAY_AMT1`-`6`, demográficos) + columna objetivo `default.payment.next.month`. Descargar el CSV y colocarlo en `data/credit_card_default.csv` (requiere cuenta gratuita de Kaggle; no se versiona en git).
 
 ## Estructura
 
