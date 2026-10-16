@@ -18,10 +18,10 @@ Tengo un proyecto de tesis separado que **no** se mezcla con el trabajo de esta 
 
 ## Caso de uso elegido (actividad 1-3)
 
-**Predicción de quiebra/insolvencia de empresas** a partir de ratios financieros (liquidez, apalancamiento, rentabilidad) — elegido por su relación directa con contaduría pública/análisis financiero.
+**Predicción de incumplimiento de pago (default) de clientes de tarjeta de crédito** a partir de su historial de pagos, límite de crédito y estados de cuenta — elegido por su relación con riesgo de crédito/cuentas por cobrar en contaduría pública, y por tener suficiente volumen (30,000 filas) para que el ejercicio de MLOps se sienta representativo.
 
-- Dataset: [Company Bankruptcy Prediction](https://www.kaggle.com/datasets/fedesoriano/company-bankruptcy-prediction) (Taiwan Economic Journal, 1999-2009). 95 ratios financieros + columna objetivo `Bankrupt?`.
-- Va en `actividad-1/data/company_bankruptcy.csv` (no versionado en git, se descarga manualmente desde Kaggle).
+- Dataset: [Default of Credit Card Clients](https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset) (UCI, Taiwan). 30,000 clientes, 23 variables (límite de crédito, historial de pagos, montos de factura/pago, demográficos) + columna objetivo `default.payment.next.month`.
+- Va en `actividad-1/data/credit_card_default.csv` (no versionado en git, se descarga con la Kaggle CLI autenticada vía `kaggle auth login`).
 - Es clasificación binaria, igual que el ejemplo de churn del profesor — se puede seguir ese mismo patrón de pipeline (cargar → entrenar → trackear) sin copiar su código.
 
 ## Stack técnico
@@ -69,13 +69,28 @@ Las próximas actividades (`actividad-2/`, `actividad-3/`, `actividad-4/`) deben
 - **Cada actividad es autocontenida**: su propio `pyproject.toml`/`poetry.lock`, porque el profesor clona y evalúa *este* repo, no `../actividades/`.
 - Idioma de documentación y commits: español, consistente con el resto del repo.
 
+## Flujo de Git — nunca hacer push directo a `master`
+
+`master` tiene **branch protection** en GitHub: push directo bloqueado (incluso para el admin), force-push y borrado de rama deshabilitados. Todo cambio entra por Pull Request ("GitHub Flow"):
+
+```powershell
+git checkout master && git pull
+git checkout -b feature/nombre-descriptivo
+# ... cambios, commits ...
+git push -u origin feature/nombre-descriptivo
+gh pr create --title "..." --body "..."
+gh pr merge --merge --delete-branch   # solo tras confirmar con el usuario
+```
+
+Un agente de IA que edite este repo debe seguir este flujo: crear rama `feature/...`, nunca commitear directo en `master`. Fusionar un PR es una acción visible/compartida — confirmar con el usuario antes de hacer `gh pr merge`.
+
 ## Colaboradores en GitHub
 
 Repo público: `https://github.com/KingAegon19/Actividades-mlops`. El profesor (`henrycala`) no es colaborador — puede ver y comentar directamente por ser público. Compañeros de equipo: pendientes de invitar (aún no se tienen sus usuarios de GitHub).
 
 ## Pendientes conocidos
 
-- [ ] Descargar el dataset de Kaggle a `actividad-1/data/`.
-- [ ] Escribir `src/` (carga de datos, modelo) y `flows/experimento_flow.py` para el caso de uso de quiebra/insolvencia.
+- [x] Descargar el dataset de Kaggle a `actividad-1/data/` (hecho vía `kaggle auth login` + `kaggle datasets download`).
+- [ ] Escribir `src/` (carga de datos, modelo) y `flows/experimento_flow.py` para el caso de uso de default de tarjeta de crédito.
 - [ ] Invitar compañeros de equipo como colaboradores cuando se tengan sus usuarios.
 - [ ] Memoria 1 (usar la plantilla en `../actividades/docs/plantilla-memoria.md`, sin copiar contenido de la referencia).

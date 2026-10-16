@@ -2,10 +2,10 @@
 # No se escriben valores en el código: todo se lee desde aquí.
 
 datos:
-  # Dataset público "Company Bankruptcy Prediction" (Taiwan Economic Journal, 1999-2009)
-  # https://www.kaggle.com/datasets/fedesoriano/company-bankruptcy-prediction
-  ruta: "data/company_bankruptcy.csv"
-  objetivo: "Bankrupt?"
+  # Dataset público "Default of Credit Card Clients" (UCI, Taiwan)
+  # https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset
+  ruta: "data/credit_card_default.csv"
+  objetivo: "default.payment.next.month"
 
 modelo:
   nombre: "logistic_regression" # p.ej. logistic_regression, random_forest
