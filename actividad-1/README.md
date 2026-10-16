@@ -2,7 +2,7 @@
 
 **Caso de uso:** predicción de incumplimiento de pago (default) de clientes de tarjeta de crédito, a partir de su historial de pagos, límite de crédito y estados de cuenta — relevante para riesgo de crédito y cuentas por cobrar.
 
-**Dataset:** [Default of Credit Card Clients](https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset) (UCI, Taiwan). 30,000 clientes, 23 variables (límite de crédito, historial de pagos `PAY_0`-`PAY_6`, montos de factura `BILL_AMT1`-`6`, pagos `PAY_AMT1`-`6`, demográficos) + columna objetivo `default.payment.next.month`. Descargar el CSV y colocarlo en `data/credit_card_default.csv` (requiere cuenta gratuita de Kaggle; no se versiona en git).
+**Dataset:** [Default of Credit Card Clients](https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset) (UCI, Taiwan). 30,000 clientes, 23 variables (límite de crédito, historial de pagos `PAY_0`-`PAY_6`, montos de factura `BILL_AMT1`-`6`, pagos `PAY_AMT1`-`6`, demográficos) + columna objetivo `default.payment.next.month`. Descargar el CSV y colocarlo en `data/credit_card_default.csv` (requiere cuenta gratuita de Kaggle; no se versiona en git). Detalle completo de cada columna: [`docs/diccionario-datos.md`](./docs/diccionario-datos.md).
 
 ## Estructura
 
