@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Poetry
+poetry.toml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow / Prefect local data
+mlflow_store/
+mlruns/
+.prefect/
+
+# Datasets descargados (no versionar, se descargan manualmente)
+actividad-*/data/*.csv
+
+# OS / editor
+.DS_Store
+.vscode/
+*.log

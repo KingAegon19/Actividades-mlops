@@ -1,0 +1,20 @@
+# Configuración de la actividad 1: datos, modelo y tracking.
+# No se escriben valores en el código: todo se lee desde aquí.
+
+datos:
+  # Dataset público "Company Bankruptcy Prediction" (Taiwan Economic Journal, 1999-2009)
+  # https://www.kaggle.com/datasets/fedesoriano/company-bankruptcy-prediction
+  ruta: "data/company_bankruptcy.csv"
+  objetivo: "Bankrupt?"
+
+modelo:
+  nombre: "logistic_regression" # p.ej. logistic_regression, random_forest
+  random_state: 42
+  test_size: 0.2
+
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "actividad-1"
+
+prefect:
+  api_url: "http://localhost:4200/api"
