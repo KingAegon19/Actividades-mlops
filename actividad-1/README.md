@@ -46,8 +46,9 @@ poetry run python flows/experimento_flow.py
 
 - [x] Definir caso de uso propio (default de tarjeta de crédito).
 - [x] Carga y validación del dataset real en `src/` (con pruebas unitarias).
-- [ ] Flow de Prefect (`flows/experimento_flow.py`).
-- [ ] Tracking con MLflow.
+- [x] Flow de Prefect (`flows/experimento_flow.py`): cargar datos → entrenar → resumen.
+- [x] Tracking con MLflow (parámetros, métricas, modelo como artifact).
+- [x] Trazabilidad verificada: run visible en `localhost:5000` (MLflow) y `localhost:4200` (Prefect).
 - [ ] Memoria 1 (plantilla del curso).
 
 ## Nota sobre el baseline
