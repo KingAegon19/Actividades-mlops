@@ -1,0 +1,81 @@
+# AGENTS.md — contexto para agentes de IA
+
+Guía para cualquier asistente de IA (Claude Code, Gemini/Antigravity, Cursor, etc.) que trabaje en este repositorio. Léela completa antes de proponer o escribir código.
+
+## Qué es este repositorio
+
+Repositorio **personal** de un estudiante para la materia universitaria de MLOps (curso "MLOps con Prefect y MLflow"). Aquí se desarrollan las actividades 1-4 de la materia con un caso de uso propio del estudiante.
+
+**No confundir con el repositorio del profesor.** Al lado de este repo, en `../actividades/`, está clonado por separado el contenido que el profesor comparte (`github.com/henrycala/santoto-mlops-content`): ahí están la **solución de referencia** de las actividades 1-3, la documentación/rúbrica de cada actividad (`docs/actividad-1.md` … `actividad-4.md`), la plantilla de memoria (`docs/plantilla-memoria.md`) y el calendario.
+
+**Regla de integridad académica — la más importante de este archivo:** nunca copiar código de `../actividades/` hacia este repo. Esa carpeta es solo para consultar la rúbrica y entender el patrón esperado (estructura de carpetas, cómo se usa MLflow/Prefect). El caso de uso, los datos y el código de este repo deben ser propios. Sí es correcto reutilizar la infraestructura genérica (el `services/docker-compose.yml`, idéntico al del curso) porque no es "la solución", es solo el levantamiento de MLflow/Prefect.
+
+## Quién soy (el estudiante)
+
+Analista de bases de datos en el área de **contaduría pública**. Nuevo en Docker, Poetry y el stack de MLOps — las explicaciones deben partir de fundamentos, no asumir experiencia previa con estas herramientas. Cuenta de GitHub: `KingAegon19`.
+
+Tengo un proyecto de tesis separado que **no** se mezcla con el trabajo de esta materia.
+
+## Caso de uso elegido (actividad 1-3)
+
+**Predicción de quiebra/insolvencia de empresas** a partir de ratios financieros (liquidez, apalancamiento, rentabilidad) — elegido por su relación directa con contaduría pública/análisis financiero.
+
+- Dataset: [Company Bankruptcy Prediction](https://www.kaggle.com/datasets/fedesoriano/company-bankruptcy-prediction) (Taiwan Economic Journal, 1999-2009). 95 ratios financieros + columna objetivo `Bankrupt?`.
+- Va en `actividad-1/data/company_bankruptcy.csv` (no versionado en git, se descarga manualmente desde Kaggle).
+- Es clasificación binaria, igual que el ejemplo de churn del profesor — se puede seguir ese mismo patrón de pipeline (cargar → entrenar → trackear) sin copiar su código.
+
+## Stack técnico
+
+| Pieza | Herramienta | Notas |
+|---|---|---|
+| Orquestación | **Prefect** 3.8.8 | Tope de Python <3.15 por esta versión |
+| Tracking/registro | **MLflow** 3.17.0 | UI en `localhost:5000` |
+| Dependencias por actividad | **Poetry** (`pyproject.toml` + `poetry.lock`) | Nunca editar `poetry.lock` a mano; usar `poetry add` |
+| Servicios (MLflow+Prefect) | **Docker Compose** en `services/` | `docker compose up -d`, requiere Docker Desktop abierto |
+| Python | 3.12 – 3.14 | Instalado: 3.13.3 |
+
+No hay despliegue en VM/nube para las actividades 1-3: todo corre local, los servicios se acceden por `localhost` (Docker mapea los puertos del contenedor directo al host, no hace falta averiguar IPs).
+
+## Estructura del repo
+
+```
+Actividades-mlops/
+├── AGENTS.md
+├── README.md
+├── .gitignore
+├── services/                      # MLflow + Prefect (Docker Compose), compartido entre actividades
+│   ├── docker-compose.yml
+│   ├── requirements.txt           # alternativa sin Docker
+│   └── README.md
+└── actividad-1/
+    ├── configs/config.yaml        # datos, modelo, MLflow/Prefect — nada hardcodeado en el código
+    ├── data/                      # dataset (gitignored, .gitkeep solo)
+    ├── flows/                     # flow de Prefect: cargar → entrenar → resumen
+    ├── src/                       # código del caso de uso
+    ├── notebooks/
+    ├── tests/
+    ├── pyproject.toml
+    ├── poetry.lock
+    └── README.md
+```
+
+Las próximas actividades (`actividad-2/`, `actividad-3/`, `actividad-4/`) deben seguir el mismo patrón de carpetas.
+
+## Convenciones a seguir
+
+- **Config fuera del código:** cualquier valor de datos/modelo/umbral va en `configs/config.yaml` de cada actividad, no hardcodeado.
+- **Reproducibilidad:** semillas fijas (`random_state`), versiones fijadas vía Poetry — el criterio de éxito del curso es "otra persona clona el repo, instala el entorno y reproduce el experimento".
+- **No versionar datasets crudos** ni artefactos de MLflow/Prefect (`mlflow_store/`, `.prefect/`, `*.csv` en `data/`) — ya está en `.gitignore`.
+- **Cada actividad es autocontenida**: su propio `pyproject.toml`/`poetry.lock`, porque el profesor clona y evalúa *este* repo, no `../actividades/`.
+- Idioma de documentación y commits: español, consistente con el resto del repo.
+
+## Colaboradores en GitHub
+
+Repo público: `https://github.com/KingAegon19/Actividades-mlops`. El profesor (`henrycala`) no es colaborador — puede ver y comentar directamente por ser público. Compañeros de equipo: pendientes de invitar (aún no se tienen sus usuarios de GitHub).
+
+## Pendientes conocidos
+
+- [ ] Descargar el dataset de Kaggle a `actividad-1/data/`.
+- [ ] Escribir `src/` (carga de datos, modelo) y `flows/experimento_flow.py` para el caso de uso de quiebra/insolvencia.
+- [ ] Invitar compañeros de equipo como colaboradores cuando se tengan sus usuarios.
+- [ ] Memoria 1 (usar la plantilla en `../actividades/docs/plantilla-memoria.md`, sin copiar contenido de la referencia).
