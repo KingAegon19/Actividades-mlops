@@ -84,6 +84,10 @@ gh pr merge --merge --delete-branch   # solo tras confirmar con el usuario
 
 Un agente de IA que edite este repo debe seguir este flujo: crear rama `feature/...`, nunca commitear directo en `master`. Fusionar un PR es una acción visible/compartida — confirmar con el usuario antes de hacer `gh pr merge`.
 
+## Obligatorio vs. opcional en cada actividad
+
+El profesor entrega la guía de cada actividad en pasos, y **no todos son obligatorios para cerrarla** — hay que leer el entregable final, no asumir que "más es mejor". En actividad 1, por ejemplo, el paso 3 (`flows/prueba_flow.py`: valida que Prefect+MLflow responden, experimento `prueba-validacion`) es obligatorio; el paso 4 (`flows/experimento_flow.py`: pipeline completa del caso de uso) está marcado explícitamente como opcional/recomendado. Un agente que construya una actividad debe verificar contra el texto literal de la guía qué es entregable obligatorio antes de darla por cerrada — no basta con que el código funcione o se vea completo. Ver [[feedback-scope-style]].
+
 ## Colaboradores en GitHub
 
 Repo público: `https://github.com/KingAegon19/Actividades-mlops`. El profesor (`henrycala`) no es colaborador — puede ver y comentar directamente por ser público. Compañeros de equipo: pendientes de invitar (aún no se tienen sus usuarios de GitHub).
@@ -91,6 +95,8 @@ Repo público: `https://github.com/KingAegon19/Actividades-mlops`. El profesor (
 ## Pendientes conocidos
 
 - [x] Descargar el dataset de Kaggle a `actividad-1/data/` (hecho vía `kaggle auth login` + `kaggle datasets download`).
-- [ ] Escribir `src/` (carga de datos, modelo) y `flows/experimento_flow.py` para el caso de uso de default de tarjeta de crédito.
+- [x] `src/` (carga de datos, modelo) y `flows/experimento_flow.py` para el caso de uso de default de tarjeta de crédito.
+- [x] `flows/prueba_flow.py` (obligatorio): valida Prefect+MLflow, experimento `prueba-validacion`.
+- [x] Dependencias fijadas con `==` exacto en `pyproject.toml` (no solo rangos), como pide la guía del profesor.
 - [ ] Invitar compañeros de equipo como colaboradores cuando se tengan sus usuarios.
 - [ ] Memoria 1 (usar la plantilla en `../actividades/docs/plantilla-memoria.md`, sin copiar contenido de la referencia).

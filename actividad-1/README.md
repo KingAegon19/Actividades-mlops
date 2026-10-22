@@ -10,7 +10,9 @@
 actividad-1/
 ├── configs/config.yaml   # datos, modelo y MLflow/Prefect (sin valores en el código)
 ├── docs/diccionario-datos.md   # qué es cada columna del dataset
-├── flows/                # flow de Prefect: cargar datos → entrenar → resumen
+├── flows/
+│   ├── prueba_flow.py     # valida que Prefect + MLflow responden (obligatorio, no usa el caso de uso)
+│   └── experimento_flow.py   # pipeline del caso de uso: cargar datos → entrenar → resumen
 ├── src/
 │   ├── config.py         # carga de configs/config.yaml
 │   ├── datos.py          # carga + validación de columnas + agrupa categorías sin documentar
@@ -34,22 +36,39 @@ poetry run pytest -q
 ## Ejecución
 
 1. Levanta MLflow y Prefect desde `../services/` (`docker compose up -d`).
-2. En PowerShell:
+2. En PowerShell, define las variables de entorno (una sola vez por terminal):
 
 ```powershell
 $env:PREFECT_API_URL = "http://localhost:4200/api"
 $env:MLFLOW_TRACKING_URI = "http://localhost:5000"
+```
+
+3. **Validación obligatoria de servicios** — corre primero esto para confirmar que Prefect y MLflow responden:
+
+```powershell
+poetry run python flows/prueba_flow.py
+```
+
+En `localhost:4200/runs` debe aparecer el flow `prueba` en estado `Completed`, con el log `Suma de 1 a 5 = 15`. En `localhost:5000` debe aparecer el experimento `prueba-validacion` con el run `prueba-mlflow` (parámetro `n`, métrica `suma`).
+
+4. **Pipeline del caso de uso** (recomendado, no obligatorio para cerrar la actividad 1):
+
+```powershell
 poetry run python flows/experimento_flow.py
 ```
 
-## Pendiente
+## Entregables de la actividad 1
 
-- [x] Definir caso de uso propio (default de tarjeta de crédito).
-- [x] Carga y validación del dataset real en `src/` (con pruebas unitarias).
-- [x] Flow de Prefect (`flows/experimento_flow.py`): cargar datos → entrenar → resumen.
-- [x] Tracking con MLflow (parámetros, métricas, modelo como artifact).
-- [x] Trazabilidad verificada: run visible en `localhost:5000` (MLflow) y `localhost:4200` (Prefect).
+Obligatorios:
+- [x] Repositorio en GitHub con estructura y README.
+- [x] `pyproject.toml` y `poetry.lock` versionados, `poetry install` funcionando en limpio.
+- [x] Servicios validados con `flows/prueba_flow.py` (capturas: run `prueba` en Prefect, experimento `prueba-validacion` en MLflow).
 - [ ] Memoria 1 (plantilla del curso).
+- [ ] Compañeros de equipo agregados como colaboradores (pendiente: aún no se tienen sus usuarios de GitHub).
+
+Recomendados (no obligatorios para cerrar esta actividad):
+- [x] Carga de datos real documentada (`src/datos.py`, `docs/diccionario-datos.md`).
+- [x] Pipeline de entrenamiento propia (`flows/experimento_flow.py`): cargar → entrenar → resumen, con tracking en MLflow.
 
 ## Nota sobre el baseline
 
