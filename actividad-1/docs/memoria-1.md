@@ -34,9 +34,12 @@ Construir la base reproducible del proyecto de la materia: estructura de reposit
 ## 4. Evidencias
 
 - Repositorio: https://github.com/KingAegon19/Actividades-mlops
-- _Pendiente: captura del run `prueba` en Prefect (`localhost:4200/runs`) en estado `Completed`, con el log `Suma de 1 a 5 = 15`._
-- _Pendiente: captura del experimento `prueba-validacion` en MLflow (`localhost:5000`) con el run `prueba-mlflow` (parámetro `n`, métrica `suma`)._
-- _Pendiente (opcional): captura del run del experimento `actividad-1` (pipeline del caso de uso) en MLflow._
+- Vista general de runs en Prefect: [`capturas/prefect-runs-overview.png`](./capturas/prefect-runs-overview.png)
+- Lista de runs en Prefect, con el run `prueba` (`nostalgic-chachalaca`) en estado `Completed`: [`capturas/prefect-prueba-run-list.png`](./capturas/prefect-prueba-run-list.png)
+- Experimentos en MLflow, con `prueba-validacion` creado: [`capturas/mlflow-experimentos.png`](./capturas/mlflow-experimentos.png)
+- _Pendiente: captura de los **logs** del run `prueba` en Prefect, donde debe verse la línea `Suma de 1 a 5 = 15`._
+- _Pendiente: captura del run `prueba-mlflow` dentro del experimento `prueba-validacion`, con el parámetro `n` y la métrica `suma` visibles._
+- _Pendiente (opcional): captura de un run del experimento `actividad-1-credit-default` (pipeline del caso de uso) en MLflow._
 
 ## 5. Resultados
 
