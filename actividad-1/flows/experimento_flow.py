@@ -12,7 +12,9 @@ from src.modelo import obtener_modelo
 @task
 def tarea_cargar_datos(config: dict):
     df = cargar_datos(config["datos"]["ruta"], config["datos"]["objetivo"])
-    return agrupar_categorias_sin_documentar(df)
+    df = agrupar_categorias_sin_documentar(df)
+    print(f"Filas cargadas: {len(df)}")
+    return df
 
 
 @task
@@ -38,7 +40,7 @@ def tarea_resumen(metricas: dict):
         print(f"  {nombre}: {valor:.4f}")
 
 
-@flow(name="actividad-1-credit-default")
+@flow(name="actividad-1-credit-default", log_prints=True)
 def experimento_flow():
     config = cargar_config()
 
@@ -52,6 +54,7 @@ def experimento_flow():
         mlflow.log_param("modelo", config["modelo"]["nombre"])
         mlflow.log_param("random_state", config["modelo"]["random_state"])
         mlflow.log_param("test_size", config["modelo"]["test_size"])
+        mlflow.log_param("n_filas", len(df))
 
         modelo, metricas = tarea_entrenar(df, config)
 
