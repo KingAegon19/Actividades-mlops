@@ -1,0 +1,30 @@
+# Configuración de la actividad 2: datos, modelo, MLflow, champion e inferencia.
+# Nada de esto va hardcodeado en el código.
+
+datos:
+  ruta: ../actividad-1/data/credit_card_default.csv   # reutiliza el dataset descargado en actividad-1
+  objetivo: default.payment.next.month
+
+division:
+  test_size: 0.2
+  random_state: 42
+
+modelo:
+  tipo: logistic_regression   # logistic_regression | random_forest
+  parametros:
+    max_iter: 1000
+
+mlflow:
+  tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad
+  experimento: credit-default-training
+  nombre_run: credit-default-training
+
+# Registro del modelo y promoción a champion.
+registro:
+  nombre_modelo: credit-default-modelo
+  umbral_auc: 0.70   # provisional: el baseline de actividad 1 dio AUC ~0.71
+
+# Pipeline de inferencia (lote diario).
+inferencia:
+  tamano_lote: 100
+  carpeta_salida: ../data   # relativa a actividad-2/ -> actividad-2/data/

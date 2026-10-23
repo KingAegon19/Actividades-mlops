@@ -47,19 +47,27 @@ Actividades-mlops/
 │   ├── docker-compose.yml
 │   ├── requirements.txt           # alternativa sin Docker
 │   └── README.md
-└── actividad-1/
-    ├── configs/config.yaml        # datos, modelo, MLflow/Prefect — nada hardcodeado en el código
-    ├── data/                      # dataset (gitignored, .gitkeep solo)
-    ├── flows/                     # flow de Prefect: cargar → entrenar → resumen
-    ├── src/                       # código del caso de uso
-    ├── notebooks/
+├── actividad-1/
+│   ├── configs/config.yaml        # datos, modelo, MLflow/Prefect — nada hardcodeado en el código
+│   ├── data/                      # dataset (gitignored, .gitkeep solo)
+│   ├── flows/                     # flow de Prefect: cargar → entrenar → resumen
+│   ├── src/                       # código del caso de uso
+│   ├── notebooks/
+│   ├── tests/
+│   ├── pyproject.toml
+│   ├── poetry.lock
+│   └── README.md
+└── actividad-2/                   # solo estructura/config por ahora, ver actividad-2/PLAN.md
+    ├── configs/{config.yaml,features.yaml}
+    ├── domain/                    # lógica de negocio (pipeline + features), sin Prefect/MLflow
+    ├── infraestructure/{flows,api}/
+    ├── src/
+    ├── data/
     ├── tests/
-    ├── pyproject.toml
-    ├── poetry.lock
-    └── README.md
+    └── pyproject.toml
 ```
 
-Las próximas actividades (`actividad-2/`, `actividad-3/`, `actividad-4/`) deben seguir el mismo patrón de carpetas.
+Las próximas actividades (`actividad-3/`, `actividad-4/`) deben seguir el mismo patrón de carpetas.
 
 ## Convenciones a seguir
 
