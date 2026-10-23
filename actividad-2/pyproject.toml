@@ -1,0 +1,39 @@
+[project]
+name = "actividad-2-mlops"
+version = "0.1.0"
+description = "Actividad 2 MLOps: pipelines de entrenamiento/inferencia y API con Prefect, MLflow y FastAPI"
+authors = [
+    {name = "KingAegon19",email = "jupavehu1@gmail.com"}
+]
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "prefect (==3.8.8)",
+    "mlflow (==3.17.0)",
+    "scikit-learn (==1.9.1)",
+    "pandas (==3.0.6)",
+    "numpy (==2.5.4)",
+    "pyyaml (==6.0.3)",
+    "fastapi (==0.143.0)",
+    "uvicorn (==0.54.0)"
+]
+
+
+[tool.poetry]
+packages = [
+    { include = "domain" },
+    { include = "infraestructure" },
+    { include = "src" },
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (==9.1.1)",
+    "httpx (==0.28.1)"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
