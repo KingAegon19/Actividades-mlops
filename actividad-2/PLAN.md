@@ -16,15 +16,21 @@ Referencia: `../../actividades/docs/actividad-2.md` (guía del profesor). No imp
 |---|---|
 | `domain/modelo.py` | Lógica pura (pipeline sklearn + selección de features por alias), sin Prefect/MLflow |
 | Carga de datos | Reutiliza `src/datos.py` de actividad-1, o se duplica aquí si conviene mantener cada actividad autocontenida |
-| `configs/features.yaml` | `ALL` = 23 columnas; `NUMERIC` = todo menos `SEX`/`EDUCATION`/`MARRIAGE`; `CUSTOM` = provisional: límite de crédito + historial de pago (`PAY_0`..`PAY_6`), sin datos demográficos |
+| `configs/features.yaml` | `ALL` = 23 columnas; `NUMERIC` = todo menos `SEX`/`EDUCATION`/`MARRIAGE`; `CUSTOM` = **confirmado por EDA**: límite de crédito + historial de pago (`PAY_0`..`PAY_6`) -- son las 7 variables con mayor correlación real con el target (ver `notebooks/eda_credit_default.ipynb`) |
 | Lote de "clientes nuevos" para inferencia | Pendiente de decidir: ¿se aparta un % del dataset desde el inicio (ej. 10%) que entrenamiento nunca toca? |
 | Champion | `registro.umbral_auc` en `config.yaml`, provisional en 0.70 (el baseline de actividad 1 dio AUC ≈ 0.71) |
+
+## Decisiones del EDA (`notebooks/eda_credit_default.ipynb`)
+
+- **Variables más predictivas:** el historial de pago domina (`PAY_0` r=0.32, bajando gradualmente hasta `PAY_6` r=0.19), seguido de `LIMIT_BAL` (r=-0.15). `BILL_AMT*` son casi irrelevantes solas (|r| < 0.02).
+- **`CUSTOM` confirmado:** `LIMIT_BAL` + `PAY_0`..`PAY_6` (coincide con las variables de mayor correlación real).
+- **Escalar features: sí, hace falta.** Los montos llegan a cientos de miles mientras el resto de variables va de -2 a 8 -- el Modelo 1 (logistic regression) debe llevar `StandardScaler`.
+- **Categorías sin documentar** (`EDUCATION` en 0/5/6, `MARRIAGE` en 0) tienen muy pocas filas y tasas erráticas -- confirma que agruparlas en "otros" (como ya hace `src/datos.py` de actividad-1) es la decisión correcta.
 
 ## Decisiones pendientes (antes de escribir los flows)
 
 - [ ] Confirmar el umbral de AUC para promoción a champion (0.70 es un punto de partida, no una decisión final).
 - [ ] Definir cómo se separa el lote de inferencia del de entrenamiento (holdout fijo vs. muestra aleatoria del test set).
-- [ ] Confirmar el conjunto `CUSTOM` de `features.yaml` (¿tiene sentido para un caso de riesgo de crédito excluir variables demográficas?).
 - [ ] Decidir si `actividad-2/` reusa el dataset de `actividad-1/data/` (como está configurado ahora) o tiene su propia copia.
 
 ## Estructura creada (sin lógica todavía)
