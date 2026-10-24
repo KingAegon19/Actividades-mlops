@@ -39,7 +39,15 @@ Construir la base reproducible del proyecto de la materia: estructura de reposit
 - Experimentos en MLflow, con `prueba-validacion` creado: [`capturas/mlflow-experimentos.png`](./capturas/mlflow-experimentos.png)
 - Logs del run `prueba` en Prefect, con la línea `Suma de 1 a 5 = 15`: [`capturas/prefect-prueba-logs.png`](./capturas/prefect-prueba-logs.png)
 - Run `prueba-mlflow` dentro de `prueba-validacion`, con el parámetro `n=5` y la métrica `suma=15`: [`capturas/mlflow-prueba-mlflow-run.png`](./capturas/mlflow-prueba-mlflow-run.png)
-- _Pendiente (opcional): captura de un run del experimento `actividad-1-credit-default` (pipeline del caso de uso) en MLflow._
+
+**Evidencia adicional (opcional) de la pipeline del caso de uso**, flow `actividad-1-credit-default` en Prefect / experimento `actividad-1` en MLflow:
+
+- Grafo del flow en Prefect (3 tareas completadas): [`capturas/prefect-experimento-grafo.png`](./capturas/prefect-experimento-grafo.png)
+- Logs del flow, con `Filas cargadas: 30000` y el inicio del resumen: [`capturas/prefect-experimento-logs-1.png`](./capturas/prefect-experimento-logs-1.png)
+- Logs del flow, con las 5 métricas del resumen: [`capturas/prefect-experimento-logs-2.png`](./capturas/prefect-experimento-logs-2.png)
+- Overview del run `orderly-fox-388` en MLflow (experimento `actividad-1`): [`capturas/mlflow-experimento-overview.png`](./capturas/mlflow-experimento-overview.png)
+- Métricas del run (`accuracy`, `auc`, `precision`, `recall`, `f1`): [`capturas/mlflow-experimento-metricas.png`](./capturas/mlflow-experimento-metricas.png)
+- Parámetros del run (`modelo=logistic_regression`, `n_filas=30000`, etc.) y modelo registrado como artifact: [`capturas/mlflow-experimento-parametros.png`](./capturas/mlflow-experimento-parametros.png)
 
 ## 5. Resultados
 
