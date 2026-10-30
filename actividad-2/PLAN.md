@@ -16,7 +16,7 @@ Referencia: `../../actividades/docs/actividad-2.md` (guía del profesor). No imp
 |---|---|
 | `domain/modelo.py` | Lógica pura (pipeline sklearn + selección de features por alias), sin Prefect/MLflow |
 | Carga de datos | Reutiliza `src/datos.py` de actividad-1, o se duplica aquí si conviene mantener cada actividad autocontenida |
-| `configs/config.yaml` → `features` | Lista `ALL` (23 columnas) + `CUSTOM` (**confirmado por EDA**: límite de crédito + historial de pago `PAY_0`..`PAY_6`, las 7 variables con mayor correlación real con el target -- ver `notebooks/eda_credit_default.ipynb`). Cada candidato se entrena con cada conjunto: un run por combinación |
+| `configs/features.yaml` | `seleccion: ALL\|NUMERIC\|CUSTOM` (como pide literalmente el enunciado). `CUSTOM` **confirmado por EDA**: límite de crédito + historial de pago `PAY_0`..`PAY_6`, las 7 variables con mayor correlación real con el target -- ver `notebooks/eda_credit_default.ipynb` |
 | Lote de "clientes nuevos" para inferencia | **Resuelto**: muestra aleatoria de `inferencia.tamano_lote` filas tomada del CSV completo en cada ejecución (simulación, no un holdout real) — cambia cada vez que corre, documentado como tal |
 | Champion | `registro.umbral_auc` en `config.yaml`, provisional en 0.70 (el baseline de actividad 1 dio AUC ≈ 0.71) |
 
@@ -43,18 +43,20 @@ Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** `recall_nuev
 
 ## Horario de los pipelines (Prefect deployments)
 
-El profesor comentó en clase la idea clave: el pipeline de entrenamiento no corre una sola vez — se deja agendado para que, **cada mes**, cuando lleguen datos nuevos, vuelva a entrenar el paquete de candidatos (`candidatos` en `config.yaml`) y revalide si alguno debe reemplazar al champion. Es una validación continua, no un entrenamiento único.
+**Lo obligatorio según el enunciado literal:** la inferencia debe tener horario diario; el entrenamiento *"puede lanzarse a mano"* -- no exige ningún horario. Eso es lo que hay que tener cerrado primero.
 
-| Pipeline | Horario (cron, UTC) | Por qué |
+**Extra opcional (como el paso 4 de actividad 1):** el profesor comentó en clase la idea de que el entrenamiento no corra una sola vez, sino que se agende para que, cada mes, al llegar datos nuevos, reentrene el paquete de candidatos (`candidatos` en `config.yaml`) y revalide el champion. No es un entregable del enunciado escrito, pero no contradice nada y profundiza el ejercicio -- se agrega después de que el despliegue manual + diario ya funcione.
+
+| Pipeline | Horario (cron, UTC) | Obligatorio? |
 |---|---|---|
-| Entrenamiento | Mensual (`0 6 1 * *`, el día 1 de cada mes) | Reentrena todos los candidatos contra datos "nuevos" y revalida el champion |
-| Inferencia | Diario (`0 6 * * *`) | Puntúa el lote simulado de clientes nuevos con el champion vigente |
+| Entrenamiento | Manual (UI de Prefect) -- opcionalmente también mensual (`0 6 1 * *`) | No; el mensual es el extra |
+| Inferencia | Diario (`0 6 * * *`) | Sí |
 
 ## Decisiones pendientes (antes de escribir los flows)
 
 - [ ] Confirmar el umbral de AUC para promoción a champion (0.70 es un punto de partida, no una decisión final).
 - [x] Cómo se simula el lote de inferencia: muestra aleatoria del CSV completo (ver tabla arriba).
-- [x] Horario de los pipelines: entrenamiento mensual, inferencia diaria (ver tabla arriba).
+- [x] Horario de los pipelines: inferencia diaria es obligatoria; entrenamiento manual obligatorio, mensual es extra opcional (ver tabla arriba).
 - [ ] Decidir si `actividad-2/` reusa el dataset de `actividad-1/data/` (como está configurado ahora) o tiene su propia copia.
 
 ## Nota de entorno: `PYTHONUTF8`
@@ -66,7 +68,8 @@ Ya nos topamos en actividad 1 con un `UnicodeEncodeError` al imprimir el emoji q
 ```
 actividad-2/
 ├── configs/
-│   └── config.yaml        # datos, candidatos, features (ALL/CUSTOM), MLflow, umbral de champion, inferencia
+│   ├── config.yaml        # datos, candidatos, MLflow, umbral de champion/recall, inferencia
+│   └── features.yaml      # seleccion: ALL/NUMERIC/CUSTOM (como pide el enunciado literal)
 ├── domain/                # lógica de negocio (pendiente)
 ├── infraestructure/
 │   ├── flows/             # entrenamiento_flow.py, inferencia_flow.py, desplegar.py (pendientes)

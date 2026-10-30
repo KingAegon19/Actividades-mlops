@@ -1,0 +1,40 @@
+# Variables que usa el experimento. Cambia `seleccion` para elegir el conjunto.
+#   ALL:     las 23 variables (demográficas + historial de pago + montos).
+#   NUMERIC: solo las variables numéricas (excluye SEX/EDUCATION/MARRIAGE).
+#   CUSTOM:  solo las variables listadas en `custom`.
+# Cada run registra en MLflow el alias usado (`features`) y el número de variables (`n_features`).
+# Ver ../actividad-1/docs/diccionario-datos.md para el detalle de cada columna.
+seleccion: ALL
+
+numeric:
+  - LIMIT_BAL
+  - AGE
+  - PAY_0
+  - PAY_2
+  - PAY_3
+  - PAY_4
+  - PAY_5
+  - PAY_6
+  - BILL_AMT1
+  - BILL_AMT2
+  - BILL_AMT3
+  - BILL_AMT4
+  - BILL_AMT5
+  - BILL_AMT6
+  - PAY_AMT1
+  - PAY_AMT2
+  - PAY_AMT3
+  - PAY_AMT4
+  - PAY_AMT5
+  - PAY_AMT6
+
+# Solo se usa cuando seleccion es CUSTOM. Confirmado por EDA: historial de pago + límite de
+# crédito son las variables con mayor correlación real con el target (ver notebooks/eda_credit_default.ipynb).
+custom:
+  - LIMIT_BAL
+  - PAY_0
+  - PAY_2
+  - PAY_3
+  - PAY_4
+  - PAY_5
+  - PAY_6

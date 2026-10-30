@@ -58,7 +58,7 @@ Actividades-mlops/
 │   ├── poetry.lock
 │   └── README.md
 └── actividad-2/                   # solo estructura/config por ahora, ver actividad-2/PLAN.md
-    ├── configs/config.yaml
+    ├── configs/{config.yaml,features.yaml}
     ├── domain/                    # lógica de negocio (pipeline + features), sin Prefect/MLflow
     ├── infraestructure/{flows,api}/
     ├── src/
