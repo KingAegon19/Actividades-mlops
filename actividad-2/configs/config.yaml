@@ -9,15 +9,23 @@ division:
   test_size: 0.2
   random_state: 42
 
-modelo:
-  tipo: logistic_regression   # logistic_regression | random_forest
-  parametros:
-    max_iter: 1000
+# Candidatos entrenados en cada corrida del pipeline de entrenamiento.
+# Cada combinación candidato x features es un run propio en MLflow; solo el de mayor AUC
+# de toda la tanda puede pasar a champion (ver sección "registro" abajo).
+candidatos:
+  - nombre_run: logistic-regression
+    tipo: logistic_regression
+    parametros:
+      max_iter: 1000
+  - nombre_run: random-forest
+    tipo: random_forest
+    parametros:
+      random_state: 42
+      n_estimators: 200
 
 mlflow:
   tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad
   experimento: credit-default-training
-  nombre_run: credit-default-training
 
 # Registro del modelo y promoción a champion.
 registro:
@@ -28,3 +36,13 @@ registro:
 inferencia:
   tamano_lote: 100
   carpeta_salida: ../data   # relativa a actividad-2/ -> actividad-2/data/
+
+# Features a usar en cada run de entrenamiento (ver configs/features.yaml para las listas).
+features:
+  - nombre: ALL
+    columnas: ALL
+  - nombre: CUSTOM
+    columnas: [LIMIT_BAL, PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6]
+
+metricas:
+  umbral: 0.5   # umbral de clasificación para accuracy/precision/recall/f1 (el AUC no depende de esto)
