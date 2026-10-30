@@ -17,8 +17,20 @@ Referencia: `../../actividades/docs/actividad-2.md` (guía del profesor). No imp
 | `domain/modelo.py` | Lógica pura (pipeline sklearn + selección de features por alias), sin Prefect/MLflow |
 | Carga de datos | Reutiliza `src/datos.py` de actividad-1, o se duplica aquí si conviene mantener cada actividad autocontenida |
 | `configs/features.yaml` | `ALL` = 23 columnas; `NUMERIC` = todo menos `SEX`/`EDUCATION`/`MARRIAGE`; `CUSTOM` = **confirmado por EDA**: límite de crédito + historial de pago (`PAY_0`..`PAY_6`) -- son las 7 variables con mayor correlación real con el target (ver `notebooks/eda_credit_default.ipynb`) |
-| Lote de "clientes nuevos" para inferencia | Pendiente de decidir: ¿se aparta un % del dataset desde el inicio (ej. 10%) que entrenamiento nunca toca? |
+| Lote de "clientes nuevos" para inferencia | **Resuelto**: muestra aleatoria de `inferencia.tamano_lote` filas tomada del CSV completo en cada ejecución (simulación, no un holdout real) — cambia cada vez que corre, documentado como tal |
 | Champion | `registro.umbral_auc` en `config.yaml`, provisional en 0.70 (el baseline de actividad 1 dio AUC ≈ 0.71) |
+
+## El mecanismo de promoción a champion (MLflow Model Registry)
+
+Usa 3 llamadas de la API de MLflow, sin lógica propia que reinventar:
+
+```python
+mlflow.register_model(model_uri, nombre)                           # crea una version nueva del modelo
+client.get_model_version_by_alias(nombre, "champion")               # None si todavia no existe ninguno
+client.set_registered_model_alias(nombre, "champion", version)      # mueve el alias a la version nueva
+```
+
+Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** (no hay champion todavía, o `auc_nuevo > auc_champion_actual`). Si no, el run queda registrado en MLflow (consultable) pero el alias no se mueve.
 
 ## Decisiones del EDA (`notebooks/eda_credit_default.ipynb`)
 
@@ -30,8 +42,12 @@ Referencia: `../../actividades/docs/actividad-2.md` (guía del profesor). No imp
 ## Decisiones pendientes (antes de escribir los flows)
 
 - [ ] Confirmar el umbral de AUC para promoción a champion (0.70 es un punto de partida, no una decisión final).
-- [ ] Definir cómo se separa el lote de inferencia del de entrenamiento (holdout fijo vs. muestra aleatoria del test set).
+- [x] Cómo se simula el lote de inferencia: muestra aleatoria del CSV completo (ver tabla arriba).
 - [ ] Decidir si `actividad-2/` reusa el dataset de `actividad-1/data/` (como está configurado ahora) o tiene su propia copia.
+
+## Nota de entorno: `PYTHONUTF8`
+
+Ya nos topamos en actividad 1 con un `UnicodeEncodeError` al imprimir el emoji que MLflow muestra al cerrar un run, en consolas con codificación `cp1252` (Git Bash en Windows). La forma robusta de evitarlo, en vez de depender de usar PowerShell: definir `$env:PYTHONUTF8 = "1"` junto a las otras variables de entorno antes de correr cualquier flow.
 
 ## Estructura creada (sin lógica todavía)
 
