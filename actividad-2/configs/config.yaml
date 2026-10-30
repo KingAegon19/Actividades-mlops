@@ -28,9 +28,13 @@ mlflow:
   experimento: credit-default-training
 
 # Registro del modelo y promoción a champion.
+# El AUC decide qué candidato es fundamentalmente mejor (no depende del umbral de decisión);
+# el recall mínimo evita que gane un modelo con buen AUC pero que en la práctica casi no
+# detecta defaults reales -- en nuestro caso, perder un default pesa más que una falsa alarma.
 registro:
   nombre_modelo: credit-default-modelo
-  umbral_auc: 0.70   # provisional: el baseline de actividad 1 dio AUC ~0.71
+  umbral_auc: 0.70      # provisional: el baseline de actividad 1 dio AUC ~0.71
+  umbral_recall: 0.50   # provisional: mínimo aceptable de defaults reales detectados
 
 # Pipeline de inferencia (lote diario).
 inferencia:

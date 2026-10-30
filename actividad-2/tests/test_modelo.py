@@ -3,7 +3,7 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-from domain.modelo import calcular_metricas, construir_modelo, resolver_features
+from domain.modelo import calcular_metricas, construir_modelo, debe_promover_a_champion, resolver_features
 
 
 def test_resolver_features_all():
@@ -54,3 +54,30 @@ def test_calcular_metricas_umbral_mas_bajo_sube_recall():
     metricas_umbral_alto = calcular_metricas(y_true, proba, umbral=0.5)
     metricas_umbral_bajo = calcular_metricas(y_true, proba, umbral=0.3)
     assert metricas_umbral_bajo["recall"] >= metricas_umbral_alto["recall"]
+
+
+def test_debe_promover_sin_champion_previo_cumple_ambos_umbrales():
+    metricas = {"auc": 0.75, "recall": 0.55}
+    assert debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=None)
+
+
+def test_debe_promover_rechaza_por_auc_bajo():
+    metricas = {"auc": 0.65, "recall": 0.90}
+    assert not debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=None)
+
+
+def test_debe_promover_rechaza_por_recall_bajo_aunque_auc_sea_alto():
+    metricas = {"auc": 0.95, "recall": 0.20}
+    assert not debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=None)
+
+
+def test_debe_promover_rechaza_si_no_supera_al_champion_actual():
+    metricas = {"auc": 0.72, "recall": 0.60}
+    champion_actual = {"auc": 0.80}
+    assert not debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=champion_actual)
+
+
+def test_debe_promover_acepta_si_supera_al_champion_actual():
+    metricas = {"auc": 0.85, "recall": 0.60}
+    champion_actual = {"auc": 0.80}
+    assert debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=champion_actual)

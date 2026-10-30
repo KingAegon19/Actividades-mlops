@@ -30,7 +30,9 @@ client.get_model_version_by_alias(nombre, "champion")               # None si to
 client.set_registered_model_alias(nombre, "champion", version)      # mueve el alias a la version nueva
 ```
 
-Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** (no hay champion todavía, o `auc_nuevo > auc_champion_actual`). Si no, el run queda registrado en MLflow (consultable) pero el alias no se mueve.
+Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** `recall_nuevo >= registro.umbral_recall` **y** (no hay champion todavía, o `auc_nuevo > auc_champion_actual`). Si no, el run queda registrado en MLflow (consultable) pero el alias no se mueve.
+
+**Por qué el recall mínimo:** el AUC solo dice qué modelo ordena mejor el riesgo en general, pero no depende de ningún umbral de decisión -- un modelo con AUC alto igual podría tener mal recall en la práctica. Y el recall solo no sirve como único criterio: un modelo que marque a *todos* los clientes como riesgo tiene recall = 1.0 perfecto y es inútil (el AUC lo filtra, porque también penaliza marcar como riesgo a quien no lo es). Por eso se exigen los dos: AUC para "¿el modelo es bueno en general?" y recall mínimo para "¿de verdad atrapa los defaults que nos importan?". Dado nuestro caso (perder un default real pesa más que una falsa alarma), un modelo no debería ser champion solo por tener buen AUC si su recall es pobre.
 
 ## Decisiones del EDA (`notebooks/eda_credit_default.ipynb`)
 

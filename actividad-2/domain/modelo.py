@@ -82,3 +82,20 @@ def calcular_metricas(y_true, proba, umbral):
         "recall": float(recall_score(y_true, pred, zero_division=0)),
         "f1": float(f1_score(y_true, pred, zero_division=0)),
     }
+
+
+def debe_promover_a_champion(metricas, umbral_auc, umbral_recall, metricas_champion_actual):
+    """Decide si un candidato gana el alias `champion`.
+
+    Exige AUC y recall mínimos a la vez: el AUC filtra que el modelo ordene bien el riesgo
+    en general (evita que gane uno que marca a todos como riesgo solo para inflar el recall),
+    y el recall mínimo evita que gane un modelo con buen AUC pero que en la práctica casi no
+    detecta defaults reales -- en este caso de uso, perder un default pesa más que una falsa alarma.
+    """
+    if metricas["auc"] < umbral_auc:
+        return False
+    if metricas["recall"] < umbral_recall:
+        return False
+    if metricas_champion_actual is not None and metricas["auc"] <= metricas_champion_actual["auc"]:
+        return False
+    return True
