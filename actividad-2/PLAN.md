@@ -75,6 +75,14 @@ una muestra de 100 clientes simulados del CSV, calculó la probabilidad de defau
 quedó con tag `fase=inferencia` y conectado al `run_id` de entrenamiento que generó ese
 champion -- se puede rastrear cualquier predicción hasta el modelo exacto que la hizo.
 
+## Despliegues en Prefect (`desplegar.py`)
+
+Corrida real de `poetry run python infraestructure/flows/desplegar.py`: los dos despliegues
+quedaron registrados en Prefect en estado `READY` -- `entrenamiento-credit-default` sin
+horario (se lanza a mano, como exige el enunciado) e `inferencia-diaria` con cron diario
+(`0 6 * * *` UTC, obligatorio). Verificado contra la API de Prefect
+(`POST /api/deployments/filter`).
+
 ## Decisiones pendientes (antes de escribir los flows restantes)
 
 - [x] Confirmar el umbral de AUC para promoción a champion: 0.70 se valida con la corrida real (el champion quedó en 0.7743).
