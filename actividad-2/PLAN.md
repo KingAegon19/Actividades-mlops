@@ -67,6 +67,14 @@ Hallazgos:
 - **`class_weight: balanced` fue una mejora real del modelo** (no solo mover el umbral de decisión): subió el recall de la regresión logística de 0.24 a 0.63, y el del random forest de 0.35 a 0.60, con el AUC prácticamente igual o mejor.
 - `random-forest-balanced` ganó la tanda (mejor AUC) y cumplió ambos umbrales de champion (AUC 0.7743 ≥ 0.70, recall 0.5998 ≥ 0.50) → quedó registrado como la **versión 1, primer champion real** en el Model Registry.
 
+## Primera corrida real de inferencia (`inferencia_flow.py`)
+
+Cargó el champion por alias (`credit-default-modelo` versión 1, sin número hardcodeado), tomó
+una muestra de 100 clientes simulados del CSV, calculó la probabilidad de default
+(media = 0.4330) y guardó `data/prediccion_2026-11-05.csv`. El run de inferencia en MLflow
+quedó con tag `fase=inferencia` y conectado al `run_id` de entrenamiento que generó ese
+champion -- se puede rastrear cualquier predicción hasta el modelo exacto que la hizo.
+
 ## Decisiones pendientes (antes de escribir los flows restantes)
 
 - [x] Confirmar el umbral de AUC para promoción a champion: 0.70 se valida con la corrida real (el champion quedó en 0.7743).
