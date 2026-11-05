@@ -52,12 +52,27 @@ Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** `recall_nuev
 | Entrenamiento | Manual (UI de Prefect) -- opcionalmente también mensual (`0 6 1 * *`) | No; el mensual es el extra |
 | Inferencia | Diario (`0 6 * * *`) | Sí |
 
-## Decisiones pendientes (antes de escribir los flows)
+## Primera corrida real de entrenamiento (`entrenamiento_flow.py`)
 
-- [ ] Confirmar el umbral de AUC para promoción a champion (0.70 es un punto de partida, no una decisión final).
+| Candidato | AUC test | AUC train | dif (overfitting) | Recall |
+|---|---|---|---|---|
+| logistic-regression | 0.7100 | 0.7296 | +0.02 | 0.2442 |
+| random-forest (sin `max_depth`) | 0.7595 | **1.0000** | **+0.24 -- overfitting real** | 0.3730 |
+| random-forest (`max_depth: 8`) | 0.7742 | 0.8187 | +0.04 | 0.3451 |
+| logistic-regression-balanced (`class_weight: balanced`) | 0.7104 | 0.7301 | +0.02 | 0.6307 |
+| **random-forest-balanced** (`max_depth: 8`, `class_weight: balanced`) | **0.7743** | 0.8248 | +0.05 | **0.5998** |
+
+Hallazgos:
+- **El random forest sin límite de profundidad memorizaba el train** (AUC train = 1.0000 exacto): no era un modelo bueno, era overfitting disfrazado de buen AUC de test. Se corrigió agregando `max_depth: 8` -- la diferencia train-test bajó de +0.24 a +0.04/+0.05, un nivel sano.
+- **`class_weight: balanced` fue una mejora real del modelo** (no solo mover el umbral de decisión): subió el recall de la regresión logística de 0.24 a 0.63, y el del random forest de 0.35 a 0.60, con el AUC prácticamente igual o mejor.
+- `random-forest-balanced` ganó la tanda (mejor AUC) y cumplió ambos umbrales de champion (AUC 0.7743 ≥ 0.70, recall 0.5998 ≥ 0.50) → quedó registrado como la **versión 1, primer champion real** en el Model Registry.
+
+## Decisiones pendientes (antes de escribir los flows restantes)
+
+- [x] Confirmar el umbral de AUC para promoción a champion: 0.70 se valida con la corrida real (el champion quedó en 0.7743).
 - [x] Cómo se simula el lote de inferencia: muestra aleatoria del CSV completo (ver tabla arriba).
 - [x] Horario de los pipelines: inferencia diaria es obligatoria; entrenamiento manual obligatorio, mensual es extra opcional (ver tabla arriba).
-- [ ] Decidir si `actividad-2/` reusa el dataset de `actividad-1/data/` (como está configurado ahora) o tiene su propia copia.
+- [x] `actividad-2/` tiene su propia copia del dataset en `data/credit_card_default.csv` (autocontenida, no depende de `actividad-1/`).
 
 ## Nota de entorno: `PYTHONUTF8`
 

@@ -2,7 +2,7 @@
 # Nada de esto va hardcodeado en el código.
 
 datos:
-  ruta: ../actividad-1/data/credit_card_default.csv   # reutiliza el dataset descargado en actividad-1
+  ruta: data/credit_card_default.csv   # copia propia de actividad-2 (cada actividad es autocontenida)
   objetivo: default.payment.next.month
 
 division:
@@ -17,11 +17,29 @@ candidatos:
     tipo: logistic_regression
     parametros:
       max_iter: 1000
+  # max_depth=8: sin limite, el random forest memoriza el train (AUC train llego a 1.0000,
+  # AUC test 0.76 -- 0.24 de diferencia, overfitting real). Limitar la profundidad evita que
+  # cada arbol crezca hasta aislar filas individuales.
   - nombre_run: random-forest
     tipo: random_forest
     parametros:
       random_state: 42
       n_estimators: 200
+      max_depth: 8
+  # class_weight=balanced: penaliza mas equivocarse con la clase minoritaria (default=1, ~22%
+  # del dataset) durante el entrenamiento -- mejora real del modelo, no solo mover el umbral.
+  - nombre_run: logistic-regression-balanced
+    tipo: logistic_regression
+    parametros:
+      max_iter: 1000
+      class_weight: balanced
+  - nombre_run: random-forest-balanced
+    tipo: random_forest
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 8
+      class_weight: balanced
 
 mlflow:
   tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad

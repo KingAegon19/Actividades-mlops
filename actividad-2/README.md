@@ -2,7 +2,7 @@
 
 **Estado:** solo estructura y configuración, la lógica de los pipelines está pendiente (ver [`PLAN.md`](./PLAN.md)).
 
-**Caso de uso:** el mismo de actividad 1 — predicción de incumplimiento de pago (default) de clientes de tarjeta de crédito. Reutiliza el dataset en `../actividad-1/data/credit_card_default.csv`.
+**Caso de uso:** el mismo de actividad 1 — predicción de incumplimiento de pago (default) de clientes de tarjeta de crédito. Usa su propia copia del dataset en `data/credit_card_default.csv` (no versionado en git, se descarga con la Kaggle CLI igual que en actividad 1 — ver `../actividad-1/README.md`).
 
 ## Qué agrega esta actividad sobre la 1
 
