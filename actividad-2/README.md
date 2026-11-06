@@ -9,6 +9,11 @@
 - **API con FastAPI** que sirve el `champion` para predecir un cliente a la vez.
 - Selección de variables configurable (`configs/features.yaml`: `ALL` / `NUMERIC` / `CUSTOM`).
 
+**Extras opcionales** (no los pide el enunciado, agregados como práctica -- ver `PLAN.md` para el detalle):
+- Ingeniería de variables (`domain/ingenieria.py`): 8 columnas derivadas, filtradas por AUC univariado.
+- Validación con k-fold estratificado (5 folds) en vez de un solo split train/test.
+- Un tercer algoritmo candidato (XGBoost, con y sin balancear).
+
 ## Estructura
 
 ```
@@ -20,6 +25,7 @@ actividad-2/
 ├── infraestructure/
 │   ├── flows/              # entrenamiento_flow.py, inferencia_flow.py, desplegar.py
 │   └── api/                 # main.py (FastAPI)
+├── domain/ingenieria.py     # extra: 8 variables derivadas (ver PLAN.md)
 ├── src/                    # config.py (carga YAML), datos.py (carga/valida el CSV)
 ├── docs/graficos/           # gráficos explicativos de AUC/recall (material de apoyo)
 ├── data/                   # dataset + salida de predicciones (gitignored)
@@ -70,13 +76,13 @@ Petición (`POST /predict`) con los datos de un cliente real del dataset:
 }
 ```
 
-Respuesta real (probada contra el champion versión 1, random-forest-balanced):
+Respuesta real (probada contra el champion versión 2, random-forest-balanced con las 8 variables derivadas y k-fold):
 
 ```json
 {
-  "probabilidad_default": 0.5674238527905989,
+  "probabilidad_default": 0.6275129964828424,
   "prediccion": 1,
-  "version_champion": "1"
+  "version_champion": "2"
 }
 ```
 

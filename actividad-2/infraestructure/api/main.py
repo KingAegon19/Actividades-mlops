@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from mlflow.tracking import MlflowClient
 from pydantic import BaseModel, ConfigDict, Field
 
+from domain.ingenieria import agregar_variables_derivadas
 from src.config import cargar_config
 
 ESTADO = {}
@@ -120,7 +121,7 @@ class PrediccionSalida(BaseModel):
 @app.post("/predict", response_model=PrediccionSalida)
 def predecir(cliente: ClienteEntrada) -> PrediccionSalida:
     modelo = ESTADO["modelo"]
-    fila = pd.DataFrame([cliente.model_dump()])[list(modelo.feature_names_in_)]
+    fila = agregar_variables_derivadas(pd.DataFrame([cliente.model_dump()]))[list(modelo.feature_names_in_)]
     proba = float(modelo.predict_proba(fila)[0, 1])
     return PrediccionSalida(
         probabilidad_default=proba,

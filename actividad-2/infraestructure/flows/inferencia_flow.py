@@ -26,6 +26,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from prefect import flow, task
 
+from domain.ingenieria import agregar_variables_derivadas
 from src.config import cargar_config
 from src.datos import cargar_datos
 
@@ -42,8 +43,10 @@ def cargar_champion(cfg):
 
 @task
 def ingerir_lote(cfg):
-    """Simula clientes nuevos: muestra aleatoria del CSV completo, con el mismo preprocesado que entrenamiento."""
+    """Simula clientes nuevos: muestra aleatoria del CSV completo, con el mismo preprocesado
+    (incluida la ingeniería de variables) que usó entrenamiento_flow.py para este champion."""
     df = cargar_datos(cfg["datos"]["ruta"], cfg["datos"]["objetivo"])
+    df = agregar_variables_derivadas(df)
     return df.sample(n=cfg["inferencia"]["tamano_lote"])
 
 

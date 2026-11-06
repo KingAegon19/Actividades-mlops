@@ -79,6 +79,63 @@ una muestra de 100 clientes simulados del CSV, calculó la probabilidad de defau
 quedó con tag `fase=inferencia` y conectado al `run_id` de entrenamiento que generó ese
 champion -- se puede rastrear cualquier predicción hasta el modelo exacto que la hizo.
 
+## Segunda corrida: ingeniería de variables + k-fold + lógica de selección corregida
+
+Tres extras opcionales agregados después (no los pide el enunciado), a petición explícita
+para practicar:
+
+**Ingeniería de variables (`domain/ingenieria.py`):** se generaron 8 candidatas (familias de
+razones, interacciones, logaritmos, cuadrados y señales de dominio) y se midió el AUC
+univariado de cada una contra el target real para decidir cuáles se quedan -- en vez de una
+prueba estadística tipo Kruskal, poco útil con solo ~30k filas:
+
+| variable | AUC discriminativo | ¿se queda? |
+|---|---|---|
+| interaccion_atraso_x_utilizacion | 0.710 | sí |
+| interaccion_atraso_x_limite | 0.707 | sí |
+| atraso_promedio_cuadrado | 0.644 | sí |
+| log_limit_bal | 0.618 | sí |
+| razon_pago_reciente | 0.579 | sí |
+| meses_con_atraso (ya existía) | -- | sí |
+| atraso_promedio (ya existía) | -- | sí |
+| utilizacion_promedio (ya existía) | -- | sí |
+| log_bill_promedio | 0.519 | no (ruido) |
+| bill_en_cero | 0.509 | no (ruido) |
+| bill_multiplo_1000 | 0.508 | no (ruido) |
+
+Las señales de dominio "balance en cero / múltiplo de 1000" (típicas de detección de fraude)
+no transfieren a riesgo de default -- tiene sentido, son heurísticas pensadas para otro
+problema. Quedaron 8 variables derivadas; el dataset pasó de 23 a 31 columnas en `ALL`.
+
+**K-fold (`domain/modelo.py::evaluar_con_kfold`):** cada candidato ahora se valida con 5-fold
+estratificado sobre el split de train, y ese promedio (no un solo split) es lo que decide el
+champion. El split de test aparte queda como chequeo independiente de overfitting (columnas
+`*_holdout` en MLflow), sin decidir nada.
+
+**Bug real encontrado y corregido -- lógica de selección (`domain/modelo.py::elegir_mejor_candidato`):**
+la versión original solo evaluaba el candidato con mejor AUC *de toda la tanda* contra las
+reglas de promoción. Con 6 candidatos esto causó que `random-forest` (sin balancear, AUC
+0.7841) bloqueara a `random-forest-balanced` (AUC casi igual, 0.7839, pero con mejor recall)
+de siquiera ser evaluado, porque el primero "ganaba" el AUC de la tanda pero fallaba el
+umbral de recall -- y la lógica no probaba al segundo. Se corrigió para evaluar cada
+candidato por separado contra las reglas y elegir el de mejor AUC *entre los que califican*.
+
+| Candidato (con las 8 variables + k-fold) | AUC k-fold | Recall k-fold | AUC holdout | dif overfitting |
+|---|---|---|---|---|
+| logistic-regression | 0.7572 | 0.2978 | 0.7436 | +0.02 |
+| random-forest | 0.7840 | 0.3696 | 0.7750 | +0.06 |
+| logistic-regression-balanced | 0.7592 | 0.6097 | 0.7470 | +0.02 |
+| **random-forest-balanced** | **0.7848** | **0.6316** | 0.7749 | +0.06 |
+| xgboost | 0.7823 | 0.3722 | 0.7770 | +0.07 |
+| xgboost-balanced | 0.7805 | 0.6287 | 0.7747 | +0.08 |
+
+`random-forest-balanced` ganó con la lógica corregida (mejor AUC k-fold entre los que cumplen
+AUC≥0.70 y recall≥0.50) → **versión 2, segundo champion real**. Verificado con
+`inferencia_flow.py` (carga versión 2, predicciones guardadas) y con la API (`POST /predict`
+con el cliente de ejemplo dio `0.6275129964828424`, idéntico a calcularlo aparte,
+fuera de la API, con el mismo champion -- confirma que la ingeniería de variables y el
+escalado quedan sincronizados entre los tres caminos).
+
 ## Despliegues en Prefect (`desplegar.py`)
 
 Corrida real de `poetry run python infraestructure/flows/desplegar.py`: los dos despliegues

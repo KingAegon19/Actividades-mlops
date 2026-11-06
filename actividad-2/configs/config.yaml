@@ -9,6 +9,13 @@ division:
   test_size: 0.2
   random_state: 42
 
+# Extra opcional (no lo pide el enunciado): valida cada candidato con k-fold estratificado
+# en vez de un solo split train/test -- el AUC/recall que decide el champion es el promedio
+# de estos folds, una estimación más robusta que un único split.
+validacion_cruzada:
+  n_splits: 5
+  random_state: 42
+
 # Candidatos entrenados en cada corrida del pipeline de entrenamiento.
 # Cada combinación candidato x features es un run propio en MLflow; solo el de mayor AUC
 # de toda la tanda puede pasar a champion (ver sección "registro" abajo).

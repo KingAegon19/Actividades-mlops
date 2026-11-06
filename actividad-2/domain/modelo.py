@@ -3,13 +3,18 @@
 No usa Prefect ni MLflow: se puede probar sin servicios levantados.
 Ver ../../actividad-1/docs/diccionario-datos.md para el detalle de cada columna.
 """
+import numpy as np
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBClassifier
+
+from domain.ingenieria import VARIABLES_DERIVADAS
 
 NUMERICAS = [
     "LIMIT_BAL",
@@ -32,7 +37,7 @@ NUMERICAS = [
     "PAY_AMT4",
     "PAY_AMT5",
     "PAY_AMT6",
-]
+] + VARIABLES_DERIVADAS
 CATEGORICAS = ["SEX", "EDUCATION", "MARRIAGE"]
 VARIABLES = NUMERICAS + CATEGORICAS
 OBJETIVO = "default.payment.next.month"
@@ -73,6 +78,44 @@ def construir_modelo(tipo, parametros, numericas, categoricas):
         transformadores.append(("cat", OneHotEncoder(handle_unknown="ignore"), categoricas))
     preprocesado = ColumnTransformer(transformadores)
     return Pipeline([("preprocesado", preprocesado), ("modelo", estimador)])
+
+
+def evaluar_con_kfold(pipeline_sin_entrenar, X, y, umbral, n_splits, random_state):
+    """Valida un pipeline (sin entrenar) con k-fold estratificado: en cada fold se clona,
+    se entrena con el resto y se evalúa en el fold -- una estimación más robusta que un
+    solo split train/test, porque promedia el desempeño sobre varias particiones distintas.
+
+    Devuelve el promedio y la desviación estándar de AUC y recall entre los `n_splits` folds.
+    """
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    aucs, recalls = [], []
+    for indices_train, indices_val in cv.split(X, y):
+        modelo = clone(pipeline_sin_entrenar)
+        modelo.fit(X.iloc[indices_train], y.iloc[indices_train])
+        proba = modelo.predict_proba(X.iloc[indices_val])[:, 1]
+        pred = (proba >= umbral).astype(int)
+        aucs.append(roc_auc_score(y.iloc[indices_val], proba))
+        recalls.append(recall_score(y.iloc[indices_val], pred, zero_division=0))
+    return {
+        "auc_kfold_promedio": float(np.mean(aucs)),
+        "auc_kfold_std": float(np.std(aucs)),
+        "recall_kfold_promedio": float(np.mean(recalls)),
+        "recall_kfold_std": float(np.std(recalls)),
+    }
+
+
+def elegir_mejor_candidato(resultados, umbral_auc, umbral_recall, metricas_champion_actual):
+    """Entre varios candidatos `(model_uri, metricas)` de una misma tanda, devuelve el de
+    mejor AUC que además cumpla `debe_promover_a_champion` -- a diferencia de comparar solo
+    el candidato con mejor AUC de toda la tanda, así no se descarta uno con buen recall solo
+    porque otro (que de todos modos no califica) tiene un AUC un poco más alto.
+
+    Devuelve None si ningún candidato califica.
+    """
+    validos = [r for r in resultados if debe_promover_a_champion(r[1], umbral_auc, umbral_recall, metricas_champion_actual)]
+    if not validos:
+        return None
+    return max(validos, key=lambda r: r[1]["auc"])
 
 
 def calcular_metricas(y_true, proba, umbral):
