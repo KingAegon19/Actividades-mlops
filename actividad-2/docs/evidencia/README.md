@@ -30,3 +30,6 @@ genera una versión nueva del modelo y el alias champion pasa a apuntar a ella"*
 6. **`07-mlflow-inferencia-run.png`** — un run de `inferencia_flow.py` (tag `fase=inferencia`),
    con `modelo_version: 2` y el `run_id` del entrenamiento que generó ese champion -- permite
    rastrear cualquier predicción hasta el modelo exacto que la hizo.
+7. **`08-health-api-v2.png`** — `GET /health` respondiendo `version_champion: "2"`, confirmando
+   en vivo cuál versión tiene cargada la API en este momento (coincide con el alias `champion`
+   de la captura 3).
