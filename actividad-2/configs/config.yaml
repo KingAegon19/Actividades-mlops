@@ -81,6 +81,10 @@ registro:
   nombre_modelo: credit-default-modelo
   umbral_auc: 0.70      # provisional: el baseline de actividad 1 dio AUC ~0.71
   umbral_recall: 0.50   # provisional: mínimo aceptable de defaults reales detectados
+  # Criterio adicional (el enunciado permite definir otros ademas de AUC): si auc_train
+  # menos auc_holdout supera esto, el candidato se descarta aunque gane en AUC -- evita que
+  # un modelo con mas overfitting (memoriza el train) desplace a uno que generaliza mejor.
+  umbral_overfitting: 0.08
 
 # Pipeline de inferencia (lote diario).
 inferencia:

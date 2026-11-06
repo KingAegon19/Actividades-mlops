@@ -136,6 +136,29 @@ con el cliente de ejemplo dio `0.6275129964828424`, idéntico a calcularlo apart
 fuera de la API, con el mismo champion -- confirma que la ingeniería de variables y el
 escalado quedan sincronizados entre los tres caminos).
 
+## Tercer extra: chequeo de overfitting en la regla de promoción
+
+Para capturar evidencia del criterio de éxito del enunciado ("una nueva ejecución del
+entrenamiento... reinicias la API... responde con la nueva versión"), se forzó un champion
+nuevo subiendo `max_depth` de `random-forest-balanced` (8 → 10). Resultado real:
+**versión 3** (AUC k-fold=0.7854, recall=0.6095) ganó -- pero con **auc_train_menos_test=0.1138**
+(vs. +0.06 de la v2), un salto claro de overfitting por una mejora de AUC insignificante
+(0.7854 vs 0.7848). Esto expuso un hueco real en `debe_promover_a_champion`: la regla solo
+miraba AUC y recall, nunca el overfitting -- un candidato peor en la práctica podía ganar por
+una diferencia de AUC dentro del ruido del k-fold (std ≈ 0.004-0.006).
+
+**Corrección:** se agregó `umbral_overfitting` (0.08) como criterio adicional (el enunciado
+permite definir otros además de AUC/recall) en `debe_promover_a_champion` y
+`elegir_mejor_candidato` (`domain/modelo.py`) -- si `auc_train_menos_test` lo supera, el
+candidato se descarta aunque gane en AUC. Con este umbral, `xgboost-balanced` (+0.0834)
+también queda excluido; `random-forest-balanced` con `max_depth: 8` (+0.06) sigue calificando.
+
+**Corrección retroactiva del alias:** como la v3 ya estaba registrada (la regla nueva no es
+retroactiva), se devolvió el alias `champion` a la versión 2 a mano vía `MlflowClient`
+(documentado aquí, no con un script permanente en el repo) -- la v3 nunca habría calificado
+bajo la regla corregida. Verificado: tras reiniciar la API, `version_champion` volvió a `2`.
+`config.yaml` quedó exactamente como estaba antes de la demo (`max_depth: 8`, `n_estimators: 200`).
+
 ## Despliegues en Prefect (`desplegar.py`)
 
 Corrida real de `poetry run python infraestructure/flows/desplegar.py`: los dos despliegues

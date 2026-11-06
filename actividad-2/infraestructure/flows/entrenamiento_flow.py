@@ -201,6 +201,7 @@ def entrenamiento_flow():
         umbral_auc=cfg["registro"]["umbral_auc"],
         umbral_recall=cfg["registro"]["umbral_recall"],
         metricas_champion_actual=metricas_champion_actual,
+        umbral_overfitting=cfg["registro"]["umbral_overfitting"],
     )
     if ganador is None:
         print("Ningún candidato de la tanda cumple los umbrales y/o supera al champion actual")

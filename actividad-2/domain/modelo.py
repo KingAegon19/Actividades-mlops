@@ -104,7 +104,7 @@ def evaluar_con_kfold(pipeline_sin_entrenar, X, y, umbral, n_splits, random_stat
     }
 
 
-def elegir_mejor_candidato(resultados, umbral_auc, umbral_recall, metricas_champion_actual):
+def elegir_mejor_candidato(resultados, umbral_auc, umbral_recall, metricas_champion_actual, umbral_overfitting=None):
     """Entre varios candidatos `(model_uri, metricas)` de una misma tanda, devuelve el de
     mejor AUC que además cumpla `debe_promover_a_champion` -- a diferencia de comparar solo
     el candidato con mejor AUC de toda la tanda, así no se descarta uno con buen recall solo
@@ -112,7 +112,10 @@ def elegir_mejor_candidato(resultados, umbral_auc, umbral_recall, metricas_champ
 
     Devuelve None si ningún candidato califica.
     """
-    validos = [r for r in resultados if debe_promover_a_champion(r[1], umbral_auc, umbral_recall, metricas_champion_actual)]
+    validos = [
+        r for r in resultados
+        if debe_promover_a_champion(r[1], umbral_auc, umbral_recall, metricas_champion_actual, umbral_overfitting)
+    ]
     if not validos:
         return None
     return max(validos, key=lambda r: r[1]["auc"])
@@ -130,18 +133,26 @@ def calcular_metricas(y_true, proba, umbral):
     }
 
 
-def debe_promover_a_champion(metricas, umbral_auc, umbral_recall, metricas_champion_actual):
+def debe_promover_a_champion(metricas, umbral_auc, umbral_recall, metricas_champion_actual, umbral_overfitting=None):
     """Decide si un candidato gana el alias `champion`.
 
     Exige AUC y recall mínimos a la vez: el AUC filtra que el modelo ordene bien el riesgo
     en general (evita que gane uno que marca a todos como riesgo solo para inflar el recall),
     y el recall mínimo evita que gane un modelo con buen AUC pero que en la práctica casi no
     detecta defaults reales -- en este caso de uso, perder un default pesa más que una falsa alarma.
+
+    `umbral_overfitting` es un criterio adicional (el enunciado permite definir otros además
+    de AUC y recall): si `metricas["auc_train_menos_test"]` lo supera, el candidato se descarta
+    aunque tenga mejor AUC que el champion actual -- un AUC apenas más alto no sirve de nada si
+    el modelo solo memorizó mejor el ruido del train. Se ignora si no se pasa (`None`), o si la
+    métrica no está presente en `metricas`.
     """
     if metricas["auc"] < umbral_auc:
         return False
     if metricas["recall"] < umbral_recall:
         return False
     if metricas_champion_actual is not None and metricas["auc"] <= metricas_champion_actual["auc"]:
+        return False
+    if umbral_overfitting is not None and metricas.get("auc_train_menos_test", 0) > umbral_overfitting:
         return False
     return True

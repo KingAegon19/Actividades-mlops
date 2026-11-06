@@ -92,6 +92,43 @@ def test_debe_promover_acepta_si_supera_al_champion_actual():
     assert debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=champion_actual)
 
 
+def test_debe_promover_rechaza_por_overfitting_aunque_gane_en_auc():
+    # Mismo caso que el test anterior, pero con mucho overfitting (auc_train_menos_test=0.11)
+    # y un umbral_overfitting definido: no debe promover aunque supere al champion en AUC.
+    metricas = {"auc": 0.85, "recall": 0.60, "auc_train_menos_test": 0.11}
+    champion_actual = {"auc": 0.80}
+    assert not debe_promover_a_champion(
+        metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=champion_actual, umbral_overfitting=0.08
+    )
+
+
+def test_debe_promover_acepta_si_overfitting_esta_dentro_del_umbral():
+    metricas = {"auc": 0.85, "recall": 0.60, "auc_train_menos_test": 0.05}
+    champion_actual = {"auc": 0.80}
+    assert debe_promover_a_champion(
+        metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=champion_actual, umbral_overfitting=0.08
+    )
+
+
+def test_debe_promover_sin_umbral_overfitting_no_revisa_esa_metrica():
+    # umbral_overfitting=None (el default) -- se ignora aunque auc_train_menos_test sea alto.
+    metricas = {"auc": 0.85, "recall": 0.60, "auc_train_menos_test": 0.30}
+    assert debe_promover_a_champion(metricas, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=None)
+
+
+def test_elegir_mejor_candidato_descarta_el_de_mayor_auc_por_overfitting():
+    # El de mejor AUC (0.80) tiene mucho overfitting; el segundo (0.78) no -- debe ganar el
+    # segundo, igual que con el recall: un AUC mas alto no vale si el candidato no califica.
+    resultados = [
+        ("uri-overfit", {"auc": 0.80, "recall": 0.55, "auc_train_menos_test": 0.15}),
+        ("uri-sano", {"auc": 0.78, "recall": 0.55, "auc_train_menos_test": 0.04}),
+    ]
+    ganador = elegir_mejor_candidato(
+        resultados, umbral_auc=0.70, umbral_recall=0.50, metricas_champion_actual=None, umbral_overfitting=0.08
+    )
+    assert ganador[0] == "uri-sano"
+
+
 def test_elegir_mejor_candidato_descarta_el_de_mejor_auc_si_no_pasa_recall():
     # El de mejor AUC (0.80) no pasa el umbral de recall; el segundo (0.78) sí -- debe ganar
     # el segundo, no quedarse sin ganador como pasaría si solo se mirara el mejor AUC de la tanda.
