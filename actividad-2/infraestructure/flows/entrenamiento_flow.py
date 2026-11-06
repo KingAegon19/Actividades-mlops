@@ -108,9 +108,14 @@ def entrenar_y_registrar(df, cfg_candidato, cfg):
             name="modelo",
             signature=infer_signature(X_test, proba),
             input_example=X_test.head(3),
-            # random_forest guarda árboles de sklearn; skops los marca como no confiables por
-            # defecto. Son modelos propios entrenados aquí mismo, así que se confía en ese tipo.
-            skops_trusted_types=["sklearn.tree._tree.Tree"],
+            # random_forest guarda árboles de sklearn y xgboost su propio Booster; skops los
+            # marca como no confiables por defecto. Son modelos propios entrenados aquí mismo,
+            # así que se confía en esos tipos.
+            skops_trusted_types=[
+                "sklearn.tree._tree.Tree",
+                "xgboost.core.Booster",
+                "xgboost.sklearn.XGBClassifier",
+            ],
         )
         print(
             f"{cfg_candidato['nombre_run']} ({cfg_candidato['tipo']}): "

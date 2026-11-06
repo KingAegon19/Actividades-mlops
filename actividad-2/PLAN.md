@@ -61,6 +61,10 @@ Regla: solo se promueve si `auc_nuevo >= registro.umbral_auc` **y** `recall_nuev
 | random-forest (`max_depth: 8`) | 0.7742 | 0.8187 | +0.04 | 0.3451 |
 | logistic-regression-balanced (`class_weight: balanced`) | 0.7104 | 0.7301 | +0.02 | 0.6307 |
 | **random-forest-balanced** (`max_depth: 8`, `class_weight: balanced`) | **0.7743** | 0.8248 | +0.05 | **0.5998** |
+| xgboost (`max_depth: 4`) | 0.7757 | 0.8497 | +0.07 | 0.3677 |
+| xgboost-balanced (`scale_pos_weight: 3.52`) | 0.7732 | 0.8550 | +0.08 | 0.6164 |
+
+**XGBoost, agregado después como extra (no lo pide el enunciado):** quedó como una práctica adicional sobre el factory de modelos, no porque la actividad lo exigiera. En la corrida real, `xgboost` (sin balancear) tuvo el mejor AUC de toda la tanda (0.7757) pero recall 0.3677 -- no pasó el umbral mínimo (0.50), así que la lógica de selección (que evalúa solo el mejor AUC de la tanda) no promovió nada. `xgboost-balanced` sí tiene buen recall (0.6164, el mejor de todos los candidatos) pero su AUC (0.7732) queda por debajo del champion vigente (`random-forest-balanced`, 0.7743) -- no lo habría reemplazado aunque la lógica evaluara cada candidato por separado. Conclusión: el champion sigue siendo `random-forest-balanced` v1; XGBoost no gana en este dataset con estos hiperparámetros, pero quedó disponible como un candidato más en `config.yaml` para quien quiera seguir ajustándolo.
 
 Hallazgos:
 - **El random forest sin límite de profundidad memorizaba el train** (AUC train = 1.0000 exacto): no era un modelo bueno, era overfitting disfrazado de buen AUC de test. Se corrigió agregando `max_depth: 8` -- la diferencia train-test bajó de +0.24 a +0.04/+0.05, un nivel sano.

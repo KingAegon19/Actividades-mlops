@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from xgboost import XGBClassifier
 
 NUMERICAS = [
     "LIMIT_BAL",
@@ -60,6 +61,8 @@ def construir_modelo(tipo, parametros, numericas, categoricas):
         estimador = LogisticRegression(**parametros)
     elif tipo == "random_forest":
         estimador = RandomForestClassifier(**parametros)
+    elif tipo == "xgboost":
+        estimador = XGBClassifier(**parametros)
     else:
         raise ValueError(f"modelo '{tipo}' no soportado")
 

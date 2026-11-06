@@ -14,7 +14,8 @@ dependencies = [
     "numpy (==2.5.4)",
     "pyyaml (==6.0.3)",
     "fastapi (==0.143.0)",
-    "uvicorn (==0.54.0)"
+    "uvicorn (==0.54.0)",
+    "xgboost (>=3.4.1,<4.0.0)"
 ]
 
 

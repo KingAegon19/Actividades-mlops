@@ -40,6 +40,27 @@ candidatos:
       n_estimators: 200
       max_depth: 8
       class_weight: balanced
+  # max_depth=4: boosting con arboles poco profundos, no hace falta tanta profundidad como
+  # el random forest porque cada arbol nuevo corrige los errores del anterior.
+  - nombre_run: xgboost
+    tipo: xgboost
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 4
+      learning_rate: 0.1
+      eval_metric: logloss
+  # scale_pos_weight ~= negativos/positivos (0.7788/0.2212), el equivalente de
+  # class_weight=balanced para XGBoost -- no existe ese parametro en XGBClassifier.
+  - nombre_run: xgboost-balanced
+    tipo: xgboost
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 4
+      learning_rate: 0.1
+      eval_metric: logloss
+      scale_pos_weight: 3.52
 
 mlflow:
   tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad
