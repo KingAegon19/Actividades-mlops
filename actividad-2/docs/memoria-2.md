@@ -108,6 +108,15 @@ ambos umbrales mínimos (AUC≥0.70, recall≥0.50) y el chequeo de overfitting 
   `max_depth` (de 8 a 10) como prueba, ganó un candidato con mucho más overfitting
   (`auc_train_menos_test`=0.11 vs 0.06) por una diferencia de AUC insignificante. Se agregó un
   umbral de overfitting como criterio adicional de promoción.
+
+  Durante el proceso de entrenamiento y selección de champion, identificamos que el modelo
+  que estaba quedando como champion tenía overfitting. Esto era un problema real porque, al
+  consumir la API, los usuarios iban a acceder a un modelo que, aunque mostraba buenas
+  métricas de entrenamiento, no generalizaba bien y podía devolver resultados poco confiables.
+  Para solucionarlo, agregamos una validación adicional al proceso de selección, más estricta:
+  descarta un candidato si tiene demasiado overfitting, aunque su AUC sea mejor que el del
+  champion actual. Así nos aseguramos de que, cada vez que se reentrene, el modelo que quede
+  como champion cumpla con un estándar real de calidad y no gane solo por una métrica aislada.
 - **Tipos no confiables al guardar modelos en MLflow.** `mlflow.sklearn.log_model` rechaza por
   defecto los árboles de `random_forest` y el `Booster` de `xgboost` como "tipos no
   confiables" (protección de `skops`). Se resolvió declarándolos explícitamente como
@@ -120,10 +129,21 @@ ambos umbrales mínimos (AUC≥0.70, recall≥0.50) y el chequeo de overfitting 
 
 ## 7. Conclusiones
 
-- [ ] *(Cada integrante: qué aprendieron sobre la diferencia entre orquestación (Prefect) y
+Lo que más nos costó entender fue cómo se conecta MLflow con la API: al principio no era
+claro, hasta que entendimos que todo pasa por HTTP — la API (FastAPI) le pregunta a MLflow,
+vía una petición HTTP, cuál es el modelo champion vigente, lo descarga, y lo usa para
+predecir. Y lo que más nos sorprendió fue ver cómo encajan Prefect y MLflow en todo el
+proceso: Prefect organiza cuándo se ejecuta el entrenamiento y la inferencia diaria, MLflow
+guarda los resultados y decide cuál modelo es el champion, y la API lo consulta para que los
+usuarios finales puedan usarlo. Entender ese flujo completo nos hizo ver la importancia real
+de MLOps: no es solo entrenar un modelo, es tener todo un sistema que permite que proyectos
+de machine learning sean confiables, reproducibles y accesibles para que otras personas los
+usen con confianza.
+
+- [ ] *(Resto del equipo: qué aprendieron sobre la diferencia entre orquestación (Prefect) y
   tracking (MLflow), y sobre el patrón de alias `champion` para desacoplar entrenamiento de
   consumo.)*
-- [ ] *(Qué fue lo más retador de esta actividad, y cómo lo resolvieron.)*
+- [ ] *(Qué fue lo más retador de esta actividad para cada quien, y cómo lo resolvieron.)*
 - [ ] *(Con más tiempo, qué mejorarían del sistema.)*
 
 ## 8. Uso de herramientas de IA
