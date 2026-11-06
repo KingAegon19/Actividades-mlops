@@ -38,12 +38,11 @@ mayoría de tareas sugeridas abajo son de documentación/pruebas, no de reescrib
 
 ### 1. Memoria 2 (sin tocar código)
 
-El documento que falta. Usar el mismo formato que la Memoria 1 (ver
-`../actividades/docs/plantilla-memoria.md` si existe, o el formato que ya usamos). El
-material ya está casi todo armado:
-- `PLAN.md` tiene las decisiones y resultados reales de cada corrida.
-- `docs/graficos/` tiene 4 gráficos explicativos (AUC, ROC, k-fold).
-- `docs/evidencia/` tiene 8 capturas reales del proceso (Model Registry, Prefect, API).
+El documento ya tiene un esqueleto armado en [`docs/memoria-2.md`](./docs/memoria-2.md),
+siguiendo el mismo formato que la Memoria 1. Las secciones 1-6 (objetivo, descripción,
+decisiones técnicas, evidencias, resultados, problemas encontrados) ya están llenas con lo
+técnico. **Faltan las secciones 7 (Conclusiones) y 8 (Uso de IA)** -- esas sí tienen que
+escribirlas ustedes con su propia experiencia, es justo donde se nota el aporte individual.
 
 ### 2. Documentación (bajo riesgo)
 
