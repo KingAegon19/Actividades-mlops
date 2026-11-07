@@ -1,0 +1,95 @@
+# Configuración de la actividad 2: datos, modelo, MLflow, champion e inferencia.
+# Nada de esto va hardcodeado en el código.
+
+datos:
+  ruta: data/credit_card_default.csv   # copia propia de actividad-2 (cada actividad es autocontenida)
+  objetivo: default.payment.next.month
+
+division:
+  test_size: 0.2
+  random_state: 42
+
+# Extra opcional (no lo pide el enunciado): valida cada candidato con k-fold estratificado
+# en vez de un solo split train/test -- el AUC/recall que decide el champion es el promedio
+# de estos folds, una estimación más robusta que un único split.
+validacion_cruzada:
+  n_splits: 5
+  random_state: 42
+
+# Candidatos entrenados en cada corrida del pipeline de entrenamiento.
+# Cada combinación candidato x features es un run propio en MLflow; solo el de mayor AUC
+# de toda la tanda puede pasar a champion (ver sección "registro" abajo).
+candidatos:
+  - nombre_run: logistic-regression
+    tipo: logistic_regression
+    parametros:
+      max_iter: 1000
+  # max_depth=8: sin limite, el random forest memoriza el train (AUC train llego a 1.0000,
+  # AUC test 0.76 -- 0.24 de diferencia, overfitting real). Limitar la profundidad evita que
+  # cada arbol crezca hasta aislar filas individuales.
+  - nombre_run: random-forest
+    tipo: random_forest
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 8
+  # class_weight=balanced: penaliza mas equivocarse con la clase minoritaria (default=1, ~22%
+  # del dataset) durante el entrenamiento -- mejora real del modelo, no solo mover el umbral.
+  - nombre_run: logistic-regression-balanced
+    tipo: logistic_regression
+    parametros:
+      max_iter: 1000
+      class_weight: balanced
+  - nombre_run: random-forest-balanced
+    tipo: random_forest
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 8
+      class_weight: balanced
+  # max_depth=4: boosting con arboles poco profundos, no hace falta tanta profundidad como
+  # el random forest porque cada arbol nuevo corrige los errores del anterior.
+  - nombre_run: xgboost
+    tipo: xgboost
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 4
+      learning_rate: 0.1
+      eval_metric: logloss
+  # scale_pos_weight ~= negativos/positivos (0.7788/0.2212), el equivalente de
+  # class_weight=balanced para XGBoost -- no existe ese parametro en XGBClassifier.
+  - nombre_run: xgboost-balanced
+    tipo: xgboost
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 4
+      learning_rate: 0.1
+      eval_metric: logloss
+      scale_pos_weight: 3.52
+
+mlflow:
+  tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad
+  experimento: credit-default-training
+
+# Registro del modelo y promoción a champion.
+# El AUC decide qué candidato es fundamentalmente mejor (no depende del umbral de decisión);
+# el recall mínimo evita que gane un modelo con buen AUC pero que en la práctica casi no
+# detecta defaults reales -- en nuestro caso, perder un default pesa más que una falsa alarma.
+registro:
+  nombre_modelo: credit-default-modelo
+  umbral_auc: 0.70      # provisional: el baseline de actividad 1 dio AUC ~0.71
+  umbral_recall: 0.50   # provisional: mínimo aceptable de defaults reales detectados
+  # Criterio adicional (el enunciado permite definir otros ademas de AUC): si auc_train
+  # menos auc_holdout supera esto, el candidato se descarta aunque gane en AUC -- evita que
+  # un modelo con mas overfitting (memoriza el train) desplace a uno que generaliza mejor.
+  umbral_overfitting: 0.08
+
+# Pipeline de inferencia (lote diario).
+inferencia:
+  tamano_lote: 100
+  carpeta_salida: data   # relativa a la raiz de actividad-2/ (se ejecuta el flow desde ahi) -> actividad-2/data/
+
+metricas:
+  umbral: 0.5   # umbral de clasificación para accuracy/precision/recall/f1 (el AUC no depende de esto)
