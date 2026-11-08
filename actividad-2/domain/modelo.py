@@ -6,7 +6,7 @@ Ver ../../actividad-1/docs/diccionario-datos.md para el detalle de cada columna.
 import numpy as np
 from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
@@ -66,6 +66,8 @@ def construir_modelo(tipo, parametros, numericas, categoricas):
         estimador = LogisticRegression(**parametros)
     elif tipo == "random_forest":
         estimador = RandomForestClassifier(**parametros)
+    elif tipo == "extra_trees":
+        estimador = ExtraTreesClassifier(**parametros)
     elif tipo == "xgboost":
         estimador = XGBClassifier(**parametros)
     else:

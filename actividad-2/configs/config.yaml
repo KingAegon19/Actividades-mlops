@@ -68,6 +68,13 @@ candidatos:
       learning_rate: 0.1
       eval_metric: logloss
       scale_pos_weight: 3.52
+  - nombre_run: extra-trees-balanced
+    tipo: extra_trees
+    parametros:
+      random_state: 42
+      n_estimators: 200
+      max_depth: 8
+      class_weight: balanced
 
 mlflow:
   tracking_uri: http://localhost:5000   # MLFLOW_TRACKING_URI, si existe, tiene prioridad
