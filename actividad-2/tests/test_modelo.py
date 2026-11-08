@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 from domain.modelo import (
@@ -41,6 +41,11 @@ def test_construir_modelo_logistic_regression():
 def test_construir_modelo_random_forest():
     modelo = construir_modelo("random_forest", {"random_state": 42}, ["LIMIT_BAL"], ["SEX"])
     assert isinstance(modelo.named_steps["modelo"], RandomForestClassifier)
+
+
+def test_construir_modelo_extra_trees():
+    modelo = construir_modelo("extra_trees", {"random_state": 42}, ["LIMIT_BAL"], ["SEX"])
+    assert isinstance(modelo.named_steps["modelo"], ExtraTreesClassifier)
 
 
 def test_construir_modelo_desconocido():
