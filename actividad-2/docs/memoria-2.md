@@ -124,8 +124,14 @@ ambos umbrales mínimos (AUC≥0.70, recall≥0.50) y el chequeo de overfitting 
   pipeline.
 - **`UnicodeEncodeError` en Git Bash.** Mismo problema que en actividad 1 (el emoji que
   imprime MLflow al cerrar un run); se resuelve con `PYTHONUTF8=1` como variable de entorno.
-- *(Agreguen aquí los problemas que encuentren al trabajar en las tareas de
-  [`PARA_COMPANEROS.md`](../PARA_COMPANEROS.md).)*
+- **Confusión sobre contra qué MLflow se compara el champion.** Al integrar un candidato
+  nuevo (`ExtraTreesClassifier`, agregado en una rama aparte siguiendo el mismo patrón de
+  factory de modelos) pareció que ese modelo había quedado como campeón. Se validó corriendo
+  el entrenamiento real contra el MLflow compartido del equipo (donde ya estaba registrado el
+  champion vigente) y el candidato nuevo no lo superó en AUC ni recall. El resultado depende
+  de contra qué historial de MLflow se compare: contra una instancia local vacía, cualquier
+  modelo que cumpla los umbrales mínimos se vuelve "campeón" por defecto, al no tener con
+  quién competir.
 
 ## 7. Conclusiones
 
@@ -140,18 +146,37 @@ de MLOps: no es solo entrenar un modelo, es tener todo un sistema que permite qu
 de machine learning sean confiables, reproducibles y accesibles para que otras personas los
 usen con confianza.
 
-- [ ] *(Resto del equipo: qué aprendieron sobre la diferencia entre orquestación (Prefect) y
-  tracking (MLflow), y sobre el patrón de alias `champion` para desacoplar entrenamiento de
-  consumo.)*
-- [ ] *(Qué fue lo más retador de esta actividad para cada quien, y cómo lo resolvieron.)*
-- [ ] *(Con más tiempo, qué mejorarían del sistema.)*
+Con más tiempo, hubiéramos implementado un paquete más amplio de modelos que se reentrenara
+con mayor frecuencia (mensual o incluso semanal, como el profesor mencionó en clase) a través
+de Prefect, con más variedad de candidatos y un seguimiento más cercano de cómo cambia el
+champion a medida que llegan datos nuevos -- en vez de depender de una sola corrida puntual
+para la entrega.
 
 ## 8. Uso de herramientas de IA
 
-> Esta sección es un requisito del curso y tiene que reflejar la experiencia real de cada
-> quien -- no la completa la IA por ustedes.
+Usamos Claude Code (Anthropic) como herramienta de IA a lo largo de la actividad. La usamos
+principalmente para construir la parte técnica del pipeline dentro de lo que exigía el
+enunciado del profesor, entender a detalle cada pieza (el patrón de alias `champion`, la
+validación con k-fold, la ingeniería de variables), y profundizar en las métricas y en cómo
+parametrizar mejor la regla de selección del champion.
 
-- [ ] Herramientas utilizadas y para qué tareas.
-- [ ] Qué partes del trabajo se hicieron sin IA.
-- [ ] Qué salidas de la IA se revisaron, corrigieron o descartaron, y por qué.
-- [ ] Contribución individual de cada integrante frente a la asistencia de IA.
+Decidimos nosotros qué modelos probar -- incluyendo agregar XGBoost y, después,
+`ExtraTreesClassifier` como candidatos adicionales siguiendo el mismo patrón ya establecido
+-- interpretamos los resultados reales de cada corrida, tomamos y organizamos las capturas de
+evidencia, y decidimos la estructura general de cómo debía funcionar el proceso de punta a
+punta, desde el entrenamiento hasta la API.
+
+Corregimos principalmente la rigurosidad de la regla de selección de champion: en un momento,
+una versión del modelo quedó como campeón por tener un AUC apenas más alto que la anterior,
+pero mostraba overfitting en las métricas; cuestionamos ese resultado y pedimos agregar un
+chequeo adicional, con el que la versión más estable terminó ganando como champion real. Algo
+similar pasó al integrar el candidato `ExtraTreesClassifier` desde una rama aparte: se había
+evaluado contra una copia local de MLflow sin el historial del equipo, lo que hacía parecer
+que ese modelo era el campeón; al validarlo contra el registro compartido del proyecto, no
+superó a la versión vigente, y corregimos el malentendido antes de integrarlo.
+
+Podemos explicar sin la IA cómo se conecta todo el proceso de punta a punta: el entrenamiento
+compara varios modelos candidatos con validación cruzada, MLflow registra los resultados y
+decide cuál queda como campeón mediante un alias, y la API consulta ese alias por HTTP para
+servir predicciones en tiempo real -- sin depender de qué versión específica esté activa en
+cada momento.
