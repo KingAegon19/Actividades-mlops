@@ -11,7 +11,8 @@ import pandas as pd
 from scipy.stats import chi2_contingency
 from sklearn.model_selection import train_test_split
 
-from domain.modelo import NUMERICAS_CRUDAS, OBJETIVO
+from domain.ingenieria import agregar_variables_derivadas
+from domain.modelo import NUMERICAS_CRUDAS, OBJETIVO, calcular_metricas
 
 # Subida máxima de la tasa de default que puede introducir el drift (nivel=1.0 → +15 puntos).
 # El dataset tiene ~22% de default; +15 puntos es un cambio fuerte pero no absurdo para una
@@ -28,6 +29,20 @@ def dividir(df, division):
         random_state=division["random_state"],
         stratify=df[OBJETIVO],
     )
+
+
+def construir_lote_con_drift(df, division, tamano_lote, nivel_drift):
+    """Arma el lote que puntúa la inferencia: una muestra de la partición de PRUEBA (nunca del
+    entrenamiento), con drift emulado sobre las columnas crudas y la ingeniería de variables
+    recalculada después, para que las derivadas reflejen el drift.
+
+    Es la lógica de `ingerir_lote` de inferencia_flow.py, aquí sin Prefect para poder probarla.
+    Es determinista: mismo df, división, tamaño y nivel producen el mismo lote.
+    """
+    _, prueba = dividir(df, division)
+    muestra = prueba.sample(n=tamano_lote, random_state=division["random_state"])
+    lote_crudo = aplicar_drift(muestra, nivel_drift, semilla=division["random_state"])
+    return agregar_variables_derivadas(lote_crudo)
 
 
 def aplicar_drift(df, nivel, semilla=42):
@@ -95,6 +110,24 @@ def validar_lote(lote):
         raise ValueError(f"el lote no tiene la columna '{OBJETIVO}': no se puede calcular el drift de evento")
     if lote[OBJETIVO].isna().any():
         raise ValueError(f"el lote tiene '{OBJETIVO}' sin valor: no se puede calcular el drift de evento")
+
+
+def evaluar_rendimiento(y_true, proba, umbral, auc_referencia, tolerancia_auc):
+    """Seguimiento del rendimiento en producción: compara el AUC del modelo sobre un lote con
+    etiquetas reales contra el AUC de referencia (el holdout con el que se promovió al champion).
+
+    Hay degradación si el AUC cae más de `tolerancia_auc`. Es el tercer ángulo de monitoreo:
+    el drift de features dice "los datos cambiaron", el de evento dice "el resultado cambió", y
+    esto dice "el modelo sirve menos" -- que es lo que de verdad importa al negocio.
+    """
+    metricas = calcular_metricas(y_true, proba, umbral)
+    caida = auc_referencia - metricas["auc"]
+    return {
+        **metricas,
+        "auc_referencia": float(auc_referencia),
+        "caida_auc": float(caida),
+        "degradacion": bool(caida > tolerancia_auc),
+    }
 
 
 def drift_de_target(referencia, lote, alfa):

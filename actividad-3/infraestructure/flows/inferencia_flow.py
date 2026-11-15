@@ -31,8 +31,8 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from prefect import flow, task
 
-from domain.ingenieria import agregar_variables_derivadas
-from domain.monitoreo import aplicar_drift, dividir
+from domain.modelo import puntuar_lote
+from domain.monitoreo import construir_lote_con_drift
 from src.config import cargar_config
 from src.datos import cargar_datos
 
@@ -53,12 +53,8 @@ def ingerir_lote(cfg):
     drift emulado sobre las columnas crudas. Luego recalcula la ingeniería de variables, para
     que las derivadas reflejen los valores ya con drift -- igual que pasaría con datos reales."""
     df = cargar_datos(cfg["datos"]["ruta"], cfg["datos"]["objetivo"])
-    _, prueba = dividir(df, cfg["division"])
-    muestra = prueba.sample(n=cfg["inferencia"]["tamano_lote"], random_state=cfg["division"]["random_state"])
-
     nivel = cfg["inferencia"]["nivel_drift"]
-    lote_crudo = aplicar_drift(muestra, nivel, semilla=cfg["division"]["random_state"])
-    lote = agregar_variables_derivadas(lote_crudo)
+    lote = construir_lote_con_drift(df, cfg["division"], cfg["inferencia"]["tamano_lote"], nivel)
     print(f"Lote de {len(lote)} clientes tomado de prueba, con nivel de drift {nivel}")
     return lote
 
@@ -80,11 +76,8 @@ def predecir(modelo, lote, cfg):
     """Calcula la probabilidad de default y guarda el resultado en un CSV con la fecha de hoy."""
     # Usa exactamente las columnas con las que se entrenó el champion (según el conjunto de
     # features vigente en ese momento), nunca todas las del CSV -- evita errores si cambia features.yaml.
-    umbral = cfg["metricas"]["umbral"]
-    proba = modelo.predict_proba(lote[list(modelo.feature_names_in_)])[:, 1]
-    resultado = lote.copy()
-    resultado["probabilidad_default"] = proba
-    resultado["prediccion"] = (proba >= umbral).astype(int)
+    resultado = puntuar_lote(modelo, lote, cfg["metricas"]["umbral"])
+    proba = resultado["probabilidad_default"]
 
     carpeta = Path(cfg["inferencia"]["carpeta_salida"])
     carpeta.mkdir(parents=True, exist_ok=True)

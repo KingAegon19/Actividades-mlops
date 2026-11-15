@@ -2,12 +2,14 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.metrics import roc_auc_score
 
 from domain.modelo import NUMERICAS_CRUDAS, OBJETIVO
 from domain.monitoreo import (
     SUBIDA_TASA_MAXIMA,
     aplicar_drift,
     drift_de_target,
+    evaluar_rendimiento,
     fraccion_desde_evidently,
     validar_lote,
 )
@@ -86,3 +88,32 @@ def test_drift_de_target_no_alerta_con_la_misma_tasa():
     referencia = pd.Series([0] * 800 + [1] * 200)
     lote = pd.Series([0] * 80 + [1] * 20)
     assert drift_de_target(referencia, lote, alfa=0.05)["drift"] is False
+
+
+# --- Seguimiento del rendimiento en producción ---
+
+
+def test_rendimiento_sin_caida_no_marca_degradacion():
+    y = pd.Series([0, 0, 0, 1, 1, 1, 0, 1, 0, 1])
+    proba = np.array([0.1, 0.2, 0.15, 0.9, 0.8, 0.85, 0.3, 0.7, 0.2, 0.95])  # separa perfecto las clases
+    resultado = evaluar_rendimiento(y, proba, umbral=0.5, auc_referencia=0.95, tolerancia_auc=0.05)
+    assert resultado["auc"] == 1.0
+    assert resultado["degradacion"] is False
+
+
+def test_rendimiento_con_caida_grande_marca_degradacion():
+    y = pd.Series([0, 1, 0, 1, 0, 1, 0, 1])
+    proba = np.array([0.6, 0.4, 0.55, 0.45, 0.6, 0.4, 0.55, 0.45])  # ordena al revés: AUC = 0
+    resultado = evaluar_rendimiento(y, proba, umbral=0.5, auc_referencia=0.78, tolerancia_auc=0.05)
+    assert resultado["caida_auc"] == pytest.approx(0.78)
+    assert resultado["degradacion"] is True
+
+
+def test_rendimiento_caida_dentro_de_la_tolerancia_no_alerta():
+    y = pd.Series([0, 1] * 20)
+    rng = np.random.default_rng(0)
+    proba = np.clip(y * 0.2 + rng.normal(0.4, 0.15, 40), 0, 1)
+    auc_real = roc_auc_score(y, proba)
+    resultado = evaluar_rendimiento(y, proba, umbral=0.5, auc_referencia=auc_real + 0.03, tolerancia_auc=0.05)
+    assert resultado["caida_auc"] == pytest.approx(0.03)
+    assert resultado["degradacion"] is False

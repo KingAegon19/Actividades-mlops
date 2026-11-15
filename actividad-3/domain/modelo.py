@@ -139,6 +139,21 @@ def calcular_metricas(y_true, proba, umbral):
     }
 
 
+def puntuar_lote(modelo, lote, umbral):
+    """Puntúa un lote con un modelo ya entrenado. Devuelve una copia del lote con
+    `probabilidad_default` y `prediccion` (1 si la probabilidad alcanza `umbral`).
+
+    Usa exactamente las columnas con las que se entrenó el modelo (`feature_names_in_`), nunca
+    todas las del lote -- así no importa que el lote traiga columnas de más (como el objetivo).
+    Es la lógica de `predecir` de inferencia_flow.py, aquí sin Prefect para poder probarla.
+    """
+    proba = modelo.predict_proba(lote[list(modelo.feature_names_in_)])[:, 1]
+    resultado = lote.copy()
+    resultado["probabilidad_default"] = proba
+    resultado["prediccion"] = (proba >= umbral).astype(int)
+    return resultado
+
+
 def debe_promover_a_champion(metricas, umbral_auc, umbral_recall, metricas_champion_actual, umbral_overfitting=None):
     """Decide si un candidato gana el alias `champion`.
 

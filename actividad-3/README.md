@@ -4,42 +4,54 @@
 
 ## Qué agrega esta actividad sobre la 2
 
-Reutiliza el pipeline de entrenamiento/inferencia/API y la ingeniería de variables de `actividad-2/` (copiados y adaptados, no importados — cada actividad es autocontenida) y agrega:
+Reutiliza el pipeline de entrenamiento/inferencia/API y la ingeniería de variables de `actividad-2/` (copiados y adaptados, no importados — cada actividad es autocontenida) y lo convierte de "entrenado una vez" a "vigilado en el tiempo", con **tres señales de monitoreo** independientes:
 
-- **Drift emulado en la inferencia** (`domain/monitoreo.py`): el lote que puntúa cada corrida sale de la parte de prueba del dataset (nunca del entrenamiento) y se le aplica un drift controlado por `inferencia.nivel_drift` (0.0 a 1.0) antes de la ingeniería de variables, para que las columnas derivadas reflejen el drift igual que pasaría con datos reales.
-- **Dos pipelines de drift en Prefect:**
-  - `drift_features_flow.py`: compara la distribución de las variables de entrada del lote contra el entrenamiento con Evidently (`DataDriftPreset`). Guarda un reporte HTML por lote en `reports/` (gitignored, se regenera en cada corrida -- ver `docs/evidencia/` para dos reportes reales conservados como prueba) y alerta si la fracción de variables con drift supera `monitoreo.umbral_drift`.
-  - `drift_evento_flow.py`: compara la tasa de default del lote contra el entrenamiento con un test chi-cuadrado. Exige que el lote traiga la columna objetivo (rechaza con un mensaje claro si no la trae) y alerta si el p-valor queda por debajo de `monitoreo.alfa_evento`.
-- **Tests de la lógica de drift** (`tests/test_monitoreo.py`), sin MLflow ni Prefect.
-- **CI opcional** (`../.github/workflows/ci.yml`): corre `poetry run pytest` en `actividad-3/` en cada PR y en cada push a `master`.
+| Señal | Pregunta que responde | Pipeline | Cómo lo mide |
+|---|---|---|---|
+| Drift de **features** | ¿cambiaron los datos de entrada? | `drift_features_flow.py` | Evidently (alerta) + pruebas propias por variable: Kolmogorov-Smirnov (continuas), chi-cuadrado (discretas) y PSI |
+| Drift de **evento** | ¿cambió la tasa de default? | `drift_evento_flow.py` | Chi-cuadrado sobre la tasa de default del lote vs. entrenamiento |
+| **Rendimiento** | ¿el modelo sigue funcionando? | `rendimiento_flow.py` | AUC del champion sobre el lote vs. su AUC de holdout; queda registrado en MLflow (`fase=monitoreo`) |
 
-Ver [`PLAN.md`](./PLAN.md) para el detalle de las decisiones y los resultados de las corridas reales (incluye un problema real encontrado y corregido: el tamaño de lote).
+Y el resto de lo que pide la actividad:
+
+- **Drift emulado en la inferencia** (`domain/monitoreo.py`): el lote sale de la partición de **prueba** (nunca del entrenamiento) y se le aplica un drift controlado por `inferencia.nivel_drift` (0.0 a 1.0) *antes* de la ingeniería de variables, para que las columnas derivadas reflejen el drift como pasaría con datos reales.
+- **Calidad de datos** (`src/datos.py::validar_calidad`): nulos, rangos y valores permitidos; un CSV corrupto falla ruidosamente al cargar.
+- **Lógica sin servicios:** lo que antes vivía dentro de tareas de Prefect (armar el lote, puntuarlo, medir drift) está en funciones puras de `domain/`, así los **99 tests** corren sin MLflow ni Prefect.
+- **CI** (`../.github/workflows/ci.yml`): corre `poetry run pytest` en cada PR y en cada push a `master`. Verificado en GitHub (PR #9, check `pruebas` en verde).
+
+Ver [`PLAN.md`](./PLAN.md) para las decisiones, los problemas reales encontrados y los resultados de las corridas.
 
 ## Estructura
 
 ```
 actividad-3/
 ├── configs/
-│   ├── config.yaml        # datos, candidatos, MLflow, champion, inferencia (+ nivel_drift), monitoreo
+│   ├── config.yaml        # datos, candidatos, MLflow, champion, inferencia (+ nivel_drift), monitoreo (umbrales)
 │   └── features.yaml      # selección de variables (igual que actividad-2)
-├── domain/
-│   ├── modelo.py           # pipeline, métricas y regla de champion (igual que actividad-2)
+├── domain/                # lógica pura, sin Prefect ni MLflow
+│   ├── modelo.py           # pipeline, métricas, regla de champion, puntuar_lote
 │   ├── ingenieria.py        # 8 variables derivadas (igual que actividad-2)
-│   └── monitoreo.py         # NUEVO: emulación de drift + detección (sin Prefect ni MLflow)
+│   ├── monitoreo.py         # NUEVO: emulación de drift, drift de evento, rendimiento
+│   └── pruebas_drift.py     # NUEVO: KS / chi-cuadrado / PSI por variable
 ├── infraestructure/
 │   ├── flows/
 │   │   ├── entrenamiento_flow.py   # igual que actividad-2
 │   │   ├── inferencia_flow.py      # adaptado: lote de prueba + drift emulado + guarda lote_actual
 │   │   ├── drift_features_flow.py  # NUEVO
 │   │   ├── drift_evento_flow.py    # NUEVO
+│   │   ├── rendimiento_flow.py     # NUEVO
 │   │   └── desplegar.py            # entrenamiento (manual) + inferencia (diaria)
 │   └── api/main.py          # igual que actividad-2
-├── scripts/explorar_tamano_lote.py   # exploración que llevó a fijar inferencia.tamano_lote=500
-├── src/                    # config.py, datos.py (igual que actividad-2)
+├── scripts/
+│   ├── explorar_tamano_lote.py     # por qué inferencia.tamano_lote=500
+│   └── barrido_drift.py            # barrido de niveles 0.0-1.0 -> docs/graficos/
+├── src/                    # config.py, datos.py (+ validar_calidad)
 ├── data/                   # dataset + lote_actual.csv + predicciones (gitignored)
-├── reports/                # reportes HTML de Evidently (gitignored, se regenera en cada corrida)
-├── docs/evidencia/          # dos reportes reales conservados como prueba (nivel 0.0 y 0.6)
-├── tests/
+├── reports/                # reportes de Evidently y tablas por variable (gitignored, se regenera)
+├── docs/
+│   ├── evidencia/           # dos reportes HTML reales conservados como prueba (nivel 0.0 y 0.6)
+│   └── graficos/            # barrido de niveles de drift (gráfico + CSV)
+├── tests/                  # datos, modelo, inferencia, API, drift, pruebas estadísticas
 └── pyproject.toml
 ```
 
@@ -57,34 +69,45 @@ $env:PYTHONUTF8 = "1"
 ## Cómo correr el proyecto, en orden
 
 ```powershell
+# 0. Tests (no necesitan servicios)
+poetry run pytest -q
+
 # 1. (si no hay champion todavía) entrena y registra
 poetry run python infraestructure/flows/entrenamiento_flow.py
 
 # 2. Puntúa un lote de prueba con drift emulado (nivel fijo en configs/config.yaml) y lo guarda
 poetry run python infraestructure/flows/inferencia_flow.py
 
-# 3. Compara ese lote contra el entrenamiento y alerta si corresponde
+# 3. Las tres señales de monitoreo sobre ese lote
 poetry run python infraestructure/flows/drift_features_flow.py
 poetry run python infraestructure/flows/drift_evento_flow.py
+poetry run python infraestructure/flows/rendimiento_flow.py
 
 # 4. Despliegues en Prefect (entrenamiento manual, inferencia diaria)
 poetry run python infraestructure/flows/desplegar.py
 
 # 5. API
 poetry run uvicorn infraestructure.api.main:app --reload
+
+# Extra: barrido de niveles 0.0 a 1.0 (tabla + gráfico en docs/graficos/)
+poetry run python scripts/barrido_drift.py
 ```
 
-Para comparar niveles de drift (0.0, 0.3, 0.6 -- ver criterio de éxito), cambia `inferencia.nivel_drift` en `configs/config.yaml` entre corridas de los pasos 2 y 3.
+Para comparar niveles (0.0, 0.3, 0.6), cambia `inferencia.nivel_drift` en `configs/config.yaml` entre corridas de los pasos 2 y 3.
 
-## Criterio de éxito: verificado en vivo
+## Criterio de éxito: verificado en vivo contra el champion real (v2)
 
-| `nivel_drift` | % variables con drift | Alerta de features | Tasa de default del lote | p-valor evento | Alerta de evento |
-|---|---|---|---|---|---|
-| 0.0 | 0% | No | 21.0% (entrenamiento: 22.1%) | 0.5869 | No |
-| 0.6 | 61% | **Sí** | 30.0% (entrenamiento: 22.1%) | 0.0000 | **Sí** |
+| `nivel_drift` | Features con drift | Alerta features | Tasa de default (lote) | Alerta evento | AUC del lote | Alerta rendimiento |
+|---|---|---|---|---|---|---|
+| 0.0 | 0% | No | 21.0% (entrenamiento: 22.1%) | No | 0.779 | No |
+| 0.6 | 61% | **Sí** | 30.0% | **Sí** | 0.678 (holdout: 0.775) | **Sí** |
 
-Detalle completo (incluyendo el problema de tamaño de lote y cómo se corrigió) en [`PLAN.md`](./PLAN.md).
+El barrido completo muestra además **cuánto drift hace falta para que cada señal lo note**:
+
+![Barrido de niveles de drift](./docs/graficos/05-barrido-drift.png)
+
+Detalle, decisiones y problemas encontrados en [`PLAN.md`](./PLAN.md).
 
 ## Pendiente
 
-Memoria 3.
+Memoria 3. Tareas de código para el equipo en [`PARA_COMPANEROS.md`](./PARA_COMPANEROS.md).

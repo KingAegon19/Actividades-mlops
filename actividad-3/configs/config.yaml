@@ -114,3 +114,13 @@ monitoreo:
   umbral_drift: 0.3                  # fracción de variables con drift a partir de la cual se alerta
   alfa_evento: 0.05                  # p-valor por debajo del cual el drift del target se considera real
   carpeta_reportes: reports          # reportes HTML de Evidently (relativa a actividad-3/, ignorada por git)
+
+  # Pruebas estadisticas por variable (KS para continuas, chi-cuadrado para discretas, PSI):
+  # una variable tiene drift si p < alfa_variable Y PSI >= umbral_psi (significancia + magnitud).
+  alfa_variable: 0.05
+  umbral_psi: 0.10                   # PSI < 0.10 estable, 0.10-0.25 moderado, > 0.25 importante
+
+  # Rendimiento en produccion: alerta si el AUC del lote cae mas de esto respecto al AUC de
+  # holdout del champion. Con lotes de 500 filas el AUC varia ~+-0.03 solo por muestreo, asi
+  # que 0.05 evita falsas alarmas sin ignorar caidas reales.
+  tolerancia_auc: 0.05
