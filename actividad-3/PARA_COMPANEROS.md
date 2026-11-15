@@ -89,6 +89,15 @@ Con los servicios levantados, corre inferencia + los tres pipelines de monitoreo
 0.0 antes de commitear**). Captura: la lista de runs en MLflow (inferencia y `fase=monitoreo`), los
 flow runs en Prefect, y la alerta en el log. El nivel 0.3 todavía no tiene capturas.
 
+### 7. Memoria 3 (sin tocar código, pero es lo único que falta del entregable)
+**Toca:** `docs/memoria-3.md`
+
+Las secciones 1-6 ya están armadas con lo técnico. **Faltan la 7 (Conclusiones) y la 8 (Uso de IA)**,
+con preguntas guía. Escríbanlas con su propia voz y su propia experiencia (igual que en la Memoria 2,
+en voz de equipo: "aprendimos...", "usamos..."): son justo las secciones donde se nota el aporte de
+cada quien, y la sección 8 tiene que ser honesta sobre qué hicieron con IA y qué sin ella. Si hacen la
+tarea 6 (capturas), pongan los enlaces en la sección 4, donde hay un `[ ]` esperándolos.
+
 ## Dudas
 
 Si algo no cuadra, pregunta en el grupo antes de pushear: es más fácil resolver una duda que deshacer un PR.

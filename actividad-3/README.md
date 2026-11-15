@@ -110,4 +110,4 @@ Detalle, decisiones y problemas encontrados en [`PLAN.md`](./PLAN.md).
 
 ## Pendiente
 
-Memoria 3. Tareas de código para el equipo en [`PARA_COMPANEROS.md`](./PARA_COMPANEROS.md).
+Memoria 3: [`docs/memoria-3.md`](./docs/memoria-3.md) ya tiene las secciones 1-6 armadas; faltan la 7 (Conclusiones) y la 8 (Uso de IA), que escribe el equipo. Tareas de código para el equipo en [`PARA_COMPANEROS.md`](./PARA_COMPANEROS.md).
