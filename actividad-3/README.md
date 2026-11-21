@@ -44,7 +44,8 @@ actividad-3/
 │   └── api/main.py          # igual que actividad-2
 ├── scripts/
 │   ├── explorar_tamano_lote.py     # por qué inferencia.tamano_lote=500
-│   └── barrido_drift.py            # barrido de niveles 0.0-1.0 -> docs/graficos/
+│   ├── barrido_drift.py            # barrido de niveles 0.0-1.0 -> docs/graficos/
+│   └── falsas_alarmas.py           # 50 semillas: falsas alarmas (0.0) y detección (0.3) -> docs/graficos/
 ├── src/                    # config.py, datos.py (+ validar_calidad)
 ├── data/                   # dataset + lote_actual.csv + predicciones (gitignored)
 ├── reports/                # reportes de Evidently y tablas por variable (gitignored, se regenera)
@@ -89,8 +90,9 @@ poetry run python infraestructure/flows/desplegar.py
 # 5. API
 poetry run uvicorn infraestructure.api.main:app --reload
 
-# Extra: barrido de niveles 0.0 a 1.0 (tabla + gráfico en docs/graficos/)
-poetry run python scripts/barrido_drift.py
+# Extras: barrido de niveles 0.0 a 1.0 (tabla + gráfico) y robustez del umbral con 50 semillas
+poetry run python scripts/barrido_drift.py       # necesita MLflow con un champion
+poetry run python scripts/falsas_alarmas.py      # no necesita servicios
 ```
 
 Para comparar niveles (0.0, 0.3, 0.6), cambia `inferencia.nivel_drift` en `configs/config.yaml` entre corridas de los pasos 2 y 3.
@@ -102,12 +104,12 @@ Para comparar niveles (0.0, 0.3, 0.6), cambia `inferencia.nivel_drift` en `confi
 | 0.0 | 0% | No | 21.0% (entrenamiento: 22.1%) | No | 0.779 | No |
 | 0.6 | 61% | **Sí** | 30.0% | **Sí** | 0.678 (holdout: 0.775) | **Sí** |
 
-El barrido completo muestra además **cuánto drift hace falta para que cada señal lo note**:
+El barrido completo muestra además **cuánto drift hace falta para que cada señal lo note**. Y repitiendo el experimento con 50 semillas distintas (`scripts/falsas_alarmas.py`, aporte de José), el umbral del 30% dio **0/50 falsas alarmas** sin drift y **47/50 detecciones (94%)** con nivel 0.3:
 
 ![Barrido de niveles de drift](./docs/graficos/05-barrido-drift.png)
 
 Detalle, decisiones y problemas encontrados en [`PLAN.md`](./PLAN.md).
 
-## Pendiente
+## Estado
 
-Memoria 3: [`docs/memoria-3.md`](./docs/memoria-3.md) ya tiene las secciones 1-6 armadas; faltan la 7 (Conclusiones) y la 8 (Uso de IA), que escribe el equipo. Tareas de código para el equipo en [`PARA_COMPANEROS.md`](./PARA_COMPANEROS.md).
+Actividad 3 completa: código, 99 tests, CI, evidencia y [`docs/memoria-3.md`](./docs/memoria-3.md). Siguiente: la actividad 4 (documento de reflexión de 2 páginas).

@@ -1,18 +1,12 @@
 # Memoria 3: Monitoreo, drift y CI
 
-> **Nota para el equipo:** las secciones 1-6 ya están armadas con lo técnico que construimos y
-> verificamos en vivo (ver [`PLAN.md`](../PLAN.md) para el detalle completo). Las secciones
-> **7 (Conclusiones)** y **8 (Uso de IA)** quedan marcadas con `[ ]` y con preguntas guía, para
-> que las escriban con su propia voz -- igual que en la Memoria 2. Revisen lo demás, corrijan lo
-> que no les cuadre, y completen esas dos antes de entregar. Borren esta nota al terminar.
-
 **Integrantes del equipo:**
 
 | Nombre completo | Usuario de GitHub |
 |---|---|
 | Juan Pablo Velez Hurtado | KingAegon19 |
-| Jose Fernando Castrillon Alzate| josefdocas |
-| Emmanuela Jimenez Prado | Emmaprado | 
+| Jose Fernando Castrillon Alzate | josefdocas |
+| Emmanuela Jimenez Prado | Emmaprado |
 
 ## 1. Objetivo
 
@@ -58,6 +52,11 @@ capa de monitoreo que le faltaba.
 6. **Barrido de niveles (`scripts/barrido_drift.py`).** Mide las tres señales con niveles de drift de
    0.0 a 1.0 contra el champion real, para saber cuánto drift hace falta para que cada alerta salte.
 
+7. **Robustez del umbral con 50 semillas (`scripts/falsas_alarmas.py`, aporte de José).** Todo lo
+   anterior se midió con una sola semilla; este experimento repite el armado del lote con 50
+   semillas distintas (cambiando la partición y la muestra) para estimar la tasa de falsas alarmas
+   sin drift (nivel 0.0) y la tasa de detección con drift (nivel 0.3).
+
 ## 3. Decisiones técnicas
 
 | Decisión | Alternativas consideradas | Por qué se eligió |
@@ -81,9 +80,40 @@ capa de monitoreo que le faltaba.
 - Decisiones, hallazgos y tablas completas de cada corrida real: [`PLAN.md`](../PLAN.md)
 - Reportes de Evidently de dos corridas reales, abribles en el navegador: [`evidencia/`](./evidencia/) -- sin drift ([`drift_features_nivel_0.0.html`](./evidencia/drift_features_nivel_0.0.html)) y con drift 0.6 ([`drift_features_nivel_0.6.html`](./evidencia/drift_features_nivel_0.6.html))
 - Barrido de niveles de drift (gráfico y tabla completa): [`graficos/`](./graficos/)
-- [ ] *(Capturas de MLflow y Prefect de las corridas con nivel de drift 0.0, 0.3 y 0.6: runs de
-  inferencia, runs con tag `fase=monitoreo` y los flow runs de los pipelines de drift. Ver la tarea 6
-  de [`PARA_COMPANEROS.md`](../PARA_COMPANEROS.md).)*
+- Experimento de robustez con 50 semillas (resultados por simulación y resumen): [`graficos/resultados_falsas_alarmas.csv`](./graficos/resultados_falsas_alarmas.csv) y [`graficos/resumen_falsas_alarmas.csv`](./graficos/resumen_falsas_alarmas.csv)
+- Pull requests del equipo, integrados a la rama de la actividad con el CI en verde: [#10 (memoria)](https://github.com/KingAegon19/Actividades-mlops/pull/10) y [#11 (experimento de falsas alarmas)](https://github.com/KingAegon19/Actividades-mlops/pull/11)
+
+Salida de terminal de las corridas reales contra el champion (extracto del log de Prefect, sin marcas
+de tiempo): primero con `nivel_drift: 0.0`, donde no salta ninguna alerta, y luego con `nivel_drift: 0.6`.
+
+```text
+# nivel_drift = 0.0
+Lote de 500 clientes tomado de prueba, con nivel de drift 0.0
+500 predicciones guardadas en data\prediccion_2026-11-15.csv (probabilidad media = 0.4282)
+Pruebas estadísticas: ninguna variable con drift
+Sin alerta: drift de features en 0% de las variables (umbral 30%)
+Pruebas estadísticas: 0% de las variables con drift -> coinciden con Evidently
+Tasa de default: entrenamiento 22.1%, lote 21.0% (p-valor 0.5869)
+Sin alerta: drift del target (p-valor 0.5869 >= 0.05)
+AUC del lote 0.7792 vs referencia 0.7749 (caída -0.0043); recall del lote 0.6476
+Sin alerta: el AUC cayó -0.0043 (tolerancia 0.05)
+
+# nivel_drift = 0.6
+Lote de 500 clientes tomado de prueba, con nivel de drift 0.6
+500 predicciones guardadas en data\prediccion_2026-11-15.csv (probabilidad media = 0.5039)
+Pruebas estadísticas: 19 de 31 variables con drift. Las que más cambiaron:
+  - PAY_6: PSI=15.94 (importante), chi2 p=0.0000
+  - PAY_4: PSI=15.89 (importante), chi2 p=0.0000
+  - PAY_2: PSI=15.88 (importante), chi2 p=0.0000
+  - meses_con_atraso: PSI=9.56 (importante), chi2 p=0.0000
+  - interaccion_atraso_x_limite: PSI=9.55 (importante), ks p=0.0000
+ALERTA: drift de features en 61% de las variables (umbral 30%)
+Pruebas estadísticas: 61% de las variables con drift -> coinciden con Evidently
+Tasa de default: entrenamiento 22.1%, lote 30.0% (p-valor 0.0000)
+ALERTA: drift del target (p-valor 0.0000 < 0.05)
+AUC del lote 0.6779 vs referencia 0.7749 (caída +0.0970); recall del lote 0.6000
+ALERTA: el AUC cayó 0.0970 (tolerancia 0.05)
+```
 
 ## 5. Resultados
 
@@ -118,6 +148,12 @@ Lo que muestra:
 - **Dos métodos independientes coinciden.** Evidently y las pruebas propias (KS / chi-cuadrado + PSI)
   difieren como máximo 3.2 puntos porcentuales en los 11 niveles y dan el mismo veredicto de alerta
   en todos: que coincidan le da confianza a la alerta.
+- **El umbral del 30% resiste el cambio de semilla.** En 50 simulaciones con nivel 0.0 no hubo
+  ninguna falsa alarma (en promedio solo el 3.1% de las variables se marcó con drift), y con nivel 0.3
+  se detectó el drift en 47 de 50 (94%). Las tres que no alertaron quedaron cerca, por debajo del
+  umbral (29.0%, 25.8% y 25.8% de las variables). El experimento es reproducible: al re-ejecutarlo,
+  los resultados son idénticos. Mide la estabilidad frente a variaciones de muestreo del mismo
+  dataset, no frente a datos de producción reales.
 - **El drift de evento es el más lento en detectarse.** Con 500 filas el error estándar de la tasa
   de default es de ~1.9 puntos; un cambio de +3.5 puntos (nivel 0.3) todavía no es significativo
   (p = 0.07). Las features delatan el problema antes de que el target se mueva.
@@ -156,13 +192,7 @@ inferencia, pruebas estadísticas y rendimiento).
 
 ## 7. Conclusiones
 
-> Esta sección la escriben ustedes, con lo que de verdad aprendieron. Preguntas guía (no tienen que
-> contestarlas todas ni en orden):
-
-- [x] ¿Qué entendieron sobre la diferencia entre **drift de datos**, **drift de evento** y
-  **degradación del rendimiento**? ¿Qué les sorprendió de que no se disparen al mismo tiempo (las
-  features alertan en 0.3, el target recién en 0.4)?
-
+**Diferencia entre drift de datos, drift de evento y degradación del rendimiento.**
 Entendimos que el drift no es una sola cosa. El **drift de datos** es cuando cambian las
 variables de entrada (por ejemplo, cuánto gastan o cuánto se atrasan los clientes); el
 **drift de evento** es cuando cambia la proporción de clientes que realmente no pagan; y la
@@ -171,52 +201,43 @@ no aparecen al mismo tiempo: las features alertan desde el nivel 0.3, pero el ta
 0.4. Eso significa que mirar las variables de entrada avisa del problema antes de que se note
 en los resultados.
 
-- [x] ¿Qué les dice que el recall subiera a 0.91 mientras el AUC caía a 0.52?
-
+**Qué nos dice que el recall subiera a 0.91 mientras el AUC caía a 0.52.**
 Que una sola métrica puede engañar. El modelo "atrapaba" a casi todos los que no pagan porque
 marcaba a casi todos como riesgo, pero ya no distinguía entre buenos y malos clientes. Por eso
 es importante mirar varias métricas a la vez.
-- [x] ¿Qué fue lo más retador de esta actividad y cómo lo resolvieron? (¿el descubrimiento de las
-  falsas alarmas por el tamaño del lote? ¿entender qué miden KS, chi-cuadrado y PSI?)
 
+**Lo más retador de la actividad.**
 Descubrir que con lotes de 100 filas el sistema daba falsas alarmas (45 % de variables con
 drift sin que hubiera drift real). Lo resolvimos aumentando el lote a 500 filas, con lo que
 las falsas alarmas bajaron a 0 %.
-- [x] ¿Qué papel tiene el CI y por qué importa que los tests no dependan de servicios levantados?
 
+**El papel del CI.**
 El CI ejecuta los tests automáticamente cada vez que alguien sube cambios, así nadie rompe el
 proyecto sin darse cuenta. Que los tests no dependan de MLflow ni Prefect permite que corran
 en cualquier computador y en GitHub.
-- [x] Con más tiempo, ¿qué mejorarían? (¿alertas a un archivo o mensaje en vez de solo al log?
-  ¿monitoreo programado después de cada inferencia? ¿reentrenar automáticamente cuando hay drift?)
 
+**Con más tiempo.**
 Nos gustaría que la alerta llegara como un mensaje (correo o chat) y no solo en el log, y que
 el monitoreo se ejecutara automáticamente después de cada inferencia.
 
 ## 8. Uso de herramientas de IA
 
-> Esta sección es un requisito del curso y tiene que reflejar la experiencia real de cada
-> quien -- no la completa la IA por ustedes. Preguntas guía:
-
-- [x] ¿Qué herramienta(s) usaron y para qué tareas concretas de esta actividad?
-
+**Herramientas utilizadas y para qué.**
 Usamos Claude Code (Anthropic) como herramienta de IA a lo largo de la actividad: para
 construir la parte técnica (emulación de drift en la inferencia, pipelines de monitoreo con
 Prefect y Evidently, pruebas estadísticas, tests y CI), para entender a fondo qué mide cada
 prueba (KS, chi-cuadrado y PSI) y para apoyar la redacción de la memoria. También usamos
 Claude para revisar el trabajo frente a los entregables del enunciado y redactar un primer
 borrador de las conclusiones, que luego revisamos y ajustamos.
-- [x] ¿Qué decidieron o hicieron ustedes sin IA? (qué señales de monitoreo construir, interpretar
-  los resultados, qué niveles de drift probar, qué tareas repartir al equipo...)
 
+**Qué decidimos y hicimos sin IA.**
 Decidimos qué señales de monitoreo construir (drift de features, drift de evento y
 rendimiento), qué niveles de drift probar (0.0, 0.3 y 0.6, más un barrido completo de 0.0 a
 1.0), interpretamos los resultados reales de cada corrida y organizamos la evidencia.
 También repartimos el trabajo en equipo: cada integrante trabajó en su propia rama e integró
 sus cambios mediante pull requests hacia la rama de la actividad.
-- [x] ¿Qué propuso la IA que ustedes revisaron, corrigieron o descartaron, y por qué? (por ejemplo,
-  qué pruebas estadísticas usar para detectar el drift, o qué tanta profundidad darle a la actividad)
 
+**Qué propuso la IA que revisamos, corregimos o descartamos.**
 Lo principal fue el tamaño del lote: con el valor heredado de la actividad 2 (100 filas), el
 monitoreo marcaba 45 % de variables con drift aun sin drift real. Cuestionamos ese resultado,
 medimos el efecto con distintos tamaños y fijamos 500 filas, con lo que las falsas alarmas
@@ -224,8 +245,8 @@ bajaron a 0 %. También revisamos las limitaciones de la emulación (por ejemplo
 del target es ruido aleatorio) y decidimos documentarlas en vez de presentarlas como pérdida
 real de rendimiento. En la memoria, reorganizamos las conclusiones pregunta por pregunta en
 lugar de la lista que se había propuesto, para que fueran más claras.
-- [x] ¿Qué podrían explicar hoy sin la IA, de punta a punta, sobre cómo funciona el monitoreo?
 
+**Qué podemos explicar sin la IA.**
 El monitoreo compara cada lote nuevo de datos con los datos de entrenamiento. Si la fracción
 de variables con drift supera el umbral configurado, el pipeline lanza una alerta. Con nivel
 de drift 0.0 no se genera ninguna alerta y con 0.6 sí. Además, el drift en las variables de

@@ -6,6 +6,9 @@ sin romper nada de lo que ya funciona. El estado completo y las decisiones está
 
 ## Estado actual
 
+> **Actualización:** la tarea 3 (falsas alarmas) la hizo José y la memoria (tarea 7) la completó Emma;
+> ambas están integradas. Las tareas 1, 2, 4, 5 y 6 siguen abiertas como mejoras opcionales.
+
 Actividad 3 está **completa a nivel de código y funcionando**: drift emulado en la inferencia, tres
 pipelines de monitoreo (features, evento, rendimiento), pruebas estadísticas por variable, validación
 de calidad de datos, 99 tests y CI en verde. Lo que falta es **pulir y ampliar**, y la Memoria 3.

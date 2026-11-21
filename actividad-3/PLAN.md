@@ -103,74 +103,37 @@ Lo que muestra:
 
 Limitación de la emulación: el drift del target sube la tasa de default convirtiendo 0 en 1 **al azar**, sin relación con las features. Es ruido de etiqueta puro, que degrada el AUC más de lo que lo haría un cambio de concepto real (donde el modelo seguiría capturando parte de la señal). Sirve para disparar y comparar las alertas, no para estimar cuánto rendimiento se perdería en producción.
 
-## Experimento T3: falsas alarmas y capacidad de detección
+## Robustez: falsas alarmas y capacidad de detección con 50 semillas
 
-### Objetivo
+Experimento de José (`josefdocas`) ([`scripts/falsas_alarmas.py`](./scripts/falsas_alarmas.py)). Hasta aquí, todo lo anterior se midió con una sola semilla (42); este experimento responde si el umbral del 30% es confiable o fue suerte.
 
-Evaluar el comportamiento del pipeline de monitoreo de features mediante simulaciones repetidas, cuantificando tanto la tasa de falsas alarmas cuando no se introduce drift como la capacidad de detección cuando se emula un nivel de drift de 0.3.
+### Diseño
 
-Diseño experimental
+Se hicieron 100 simulaciones en dos escenarios: **50 con nivel de drift 0.0** (para medir falsas alarmas) y **50 con nivel 0.3** (para medir la capacidad de detección), con semillas de 0 a 49. Cada semilla cambia la partición train/prueba **y** la muestra del lote, y la referencia se recalcula con esa misma partición. La referencia son los datos de entrenamiento y el lote sale de la partición de prueba, con el mismo mecanismo de drift y la recalculación de las variables derivadas.
 
-Se realizaron 100 simulaciones distribuidas en dos escenarios:
+La alerta usa el criterio oficial del pipeline: `fraccion_evidently > monitoreo.umbral_drift` (0.30). Solo evalúa el pipeline de features con Evidently; no usa MLflow.
 
-Drift 0.0: 50 simulaciones para evaluar las falsas alarmas.
+### Resultados
 
-Drift 0.3: 50 simulaciones para evaluar la capacidad de detección.
-
-En cada escenario se utilizaron semillas de 0 a 49, variando las particiones y muestras de datos mediante la configuración de aleatoriedad. La referencia corresponde a los datos de entrenamiento y el lote de monitoreo se obtiene de la partición de prueba. Se conserva el mismo mecanismo de emulación de drift y la recalculación de las variables derivadas.
-
-La alerta de features se determina mediante el criterio oficial del pipeline:
-
-fraccion_evidently > cfg["monitoreo"]["umbral_drift"]
-
-Con un umbral configurado en 0.30, la alerta se activa cuando la proporción de variables detectadas con drift por Evidently supera el 30%.
-
-Resultados
-
-| Nivel de drift | Simulaciones | Alertas | Drift promedio detectado | Mediana | Tasa de alertas |
+| Nivel de drift | Simulaciones | Alertas | % medio de variables con drift | Mediana | Tasa de alertas |
 |---|---:|---:|---:|---:|---:|
-| 0.0 | 50 | 0 | 3.10% | 0.00% | 0.00% |
-| 0.3 | 50 | 47 | 39.74% | 38.71% | 94.00% |
+| 0.0 | 50 | 0 | 3.10% | 0.00% | **0.00%** (falsas alarmas) |
+| 0.3 | 50 | 47 | 39.74% | 38.71% | **94.00%** (detección) |
 
-Análisis de resultados
+- **Sin drift (0.0):** ninguna de las 50 simulaciones generó alerta; en promedio solo el 3.1% de las variables se marcó con drift.
+- **Con drift 0.3:** 47 de 50 simulaciones generaron alerta (94%). Las tres que no alertaron quedaron cerca pero por debajo del umbral:
 
-Escenario sin drift (0.0). En las 50 simulaciones no se generaron alertas. La fracción promedio de variables detectadas con drift fue del 3.10%, lo que indica que el monitoreo presentó un comportamiento estable bajo las condiciones evaluadas.
+| Semilla | % de variables con drift |
+|---|---:|
+| 13 | 29.03% |
+| 31 | 25.81% |
+| 45 | 25.81% |
 
-Escenario con drift (0.3). Se generaron alertas en 47 de las 50 simulaciones, alcanzando una tasa de detección observada del 94%. La proporción promedio de variables identificadas con drift fue del 39.74%, superando el umbral configurado del 30%.
+### Conclusión y límites
 
-Las tres simulaciones en las que no se generó alerta fueron:
+El monitoreo se comporta de forma estable: ninguna falsa alarma en 50 corridas y 94% de detección en el nivel 0.3, que es el límite inferior en el que el barrido anterior vio la primera alerta. Esto **no** implica que la probabilidad real de falsa alarma sea cero ni que la detección sea universal: todas las simulaciones salen del mismo dataset, así que miden la estabilidad frente a variaciones de muestreo, no frente a datasets independientes ni a producción real. El 6% de detecciones fallidas en 0.3 es el costo de un umbral del 30% justo donde el drift empieza a notarse.
 
-Semilla
-
-Fracción de variables con drift
-
-13
-
-29.03%
-
-31
-
-25.81%
-
-45
-
-25.81%
-
-En estos casos, la proporción de variables detectadas no superó el umbral establecido, por lo que el sistema no activó la alerta. Este comportamiento es consistente con la regla de decisión implementada.
-
-Conclusión
-
-Los resultados muestran un comportamiento favorable del sistema de monitoreo en las condiciones experimentales evaluadas: no se observaron falsas alarmas en las 50 simulaciones con drift 0.0 y se obtuvo una tasa de detección del 94% en las 50 simulaciones con drift 0.3.
-
-Sin embargo, estos resultados no implican que la probabilidad real de falsas alarmas sea cero ni que la detección sea universal. Las simulaciones utilizan diferentes particiones y muestras provenientes del mismo dataset, por lo que evalúan la estabilidad del mecanismo bajo variaciones de muestreo, pero no su comportamiento frente a múltiples datasets independientes o escenarios reales de producción.
-
-Artefactos generados
-
-scripts/falsas_alarmas.py: ejecución del experimento.
-
-docs/graficos/resultados_falsas_alarmas.csv: resultados individuales de las simulaciones.
-
-docs/graficos/resumen_falsas_alarmas.csv: resumen estadístico por escenario.
+Se verificó que el experimento es **reproducible**: al re-ejecutarlo, los dos CSV de resultados quedan idénticos. Artefactos: [`docs/graficos/resultados_falsas_alarmas.csv`](./docs/graficos/resultados_falsas_alarmas.csv) (una fila por simulación) y [`docs/graficos/resumen_falsas_alarmas.csv`](./docs/graficos/resumen_falsas_alarmas.csv) (resumen por escenario).
 
 ## Tests (99, sin MLflow ni Prefect)
 
@@ -182,9 +145,7 @@ docs/graficos/resumen_falsas_alarmas.csv: resumen estadístico por escenario.
 | API | `tests/test_api.py` | `/predict` con modelo de juguete, rechazo de clientes incompletos (422) |
 | Drift | `tests/test_monitoreo.py`, `tests/test_pruebas_drift.py` | Emulación, drift de evento, rechazo de lotes sin etiquetas, rendimiento, PSI/KS/chi-cuadrado, y una prueba de integración: sin drift casi nada se marca, con drift se supera el umbral, y más drift marca más variables |
 
-Verificado también en GitHub: el CI (`../.github/workflows/ci.yml`) corrió sobre el PR #9 y pasó.
-
-
+Verificado también en GitHub: el CI (`../.github/workflows/ci.yml`) corrió y pasó en el PR #9 y en los PRs del equipo (#10 y #11), que se integraron a la rama de la actividad solo con el check en verde.
 
 ## Decisiones técnicas adicionales
 
@@ -197,7 +158,6 @@ Verificado también en GitHub: el CI (`../.github/workflows/ci.yml`) corrió sob
 | La alerta de features sale de Evidently; las pruebas propias son contraste | Alertar con las pruebas propias, o con "cualquiera de las dos" | El enunciado pide Evidently para este pipeline. Las pruebas propias explican la alerta y avisan si discrepan, sin cambiar el contrato del pipeline |
 | El pipeline de rendimiento compara contra `auc_holdout` del run de entrenamiento del champion | Compararlo contra el AUC de k-fold (el que decide el champion) | El lote sale de la misma partición de prueba que el holdout, así que es la referencia comparable; el k-fold se calculó solo sobre entrenamiento |
 
-## Pendiente
+## Estado
 
-- Memoria 3 (y después la actividad 4, documento de reflexión de 2 páginas).
-- Tareas de código para el equipo: [`PARA_COMPANEROS.md`](./PARA_COMPANEROS.md).
+Actividad 3 completa: código, 99 tests, CI, evidencia y [`docs/memoria-3.md`](./docs/memoria-3.md). Lo que sigue es la actividad 4 (documento de reflexión de 2 páginas sobre el sistema de punta a punta).
