@@ -11,7 +11,7 @@
 | Nombre completo | Usuario de GitHub |
 |---|---|
 | Juan Pablo Velez Hurtado | KingAegon19 |
-| jose Fernando Castrillon Alzate| josefdocas |
+| Jose Fernando Castrillon Alzate| josefdocas |
 | Emmanuela Jimenez Prado | Emmaprado | 
 
 ## 1. Objetivo
