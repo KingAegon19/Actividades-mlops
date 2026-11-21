@@ -103,6 +103,75 @@ Lo que muestra:
 
 Limitación de la emulación: el drift del target sube la tasa de default convirtiendo 0 en 1 **al azar**, sin relación con las features. Es ruido de etiqueta puro, que degrada el AUC más de lo que lo haría un cambio de concepto real (donde el modelo seguiría capturando parte de la señal). Sirve para disparar y comparar las alertas, no para estimar cuánto rendimiento se perdería en producción.
 
+## Experimento T3: falsas alarmas y capacidad de detección
+
+### Objetivo
+
+Evaluar el comportamiento del pipeline de monitoreo de features mediante simulaciones repetidas, cuantificando tanto la tasa de falsas alarmas cuando no se introduce drift como la capacidad de detección cuando se emula un nivel de drift de 0.3.
+
+Diseño experimental
+
+Se realizaron 100 simulaciones distribuidas en dos escenarios:
+
+Drift 0.0: 50 simulaciones para evaluar las falsas alarmas.
+
+Drift 0.3: 50 simulaciones para evaluar la capacidad de detección.
+
+En cada escenario se utilizaron semillas de 0 a 49, variando las particiones y muestras de datos mediante la configuración de aleatoriedad. La referencia corresponde a los datos de entrenamiento y el lote de monitoreo se obtiene de la partición de prueba. Se conserva el mismo mecanismo de emulación de drift y la recalculación de las variables derivadas.
+
+La alerta de features se determina mediante el criterio oficial del pipeline:
+
+fraccion_evidently > cfg["monitoreo"]["umbral_drift"]
+
+Con un umbral configurado en 0.30, la alerta se activa cuando la proporción de variables detectadas con drift por Evidently supera el 30%.
+
+Resultados
+
+| Nivel de drift | Simulaciones | Alertas | Drift promedio detectado | Mediana | Tasa de alertas |
+|---|---:|---:|---:|---:|---:|
+| 0.0 | 50 | 0 | 3.10% | 0.00% | 0.00% |
+| 0.3 | 50 | 47 | 39.74% | 38.71% | 94.00% |
+
+Análisis de resultados
+
+Escenario sin drift (0.0). En las 50 simulaciones no se generaron alertas. La fracción promedio de variables detectadas con drift fue del 3.10%, lo que indica que el monitoreo presentó un comportamiento estable bajo las condiciones evaluadas.
+
+Escenario con drift (0.3). Se generaron alertas en 47 de las 50 simulaciones, alcanzando una tasa de detección observada del 94%. La proporción promedio de variables identificadas con drift fue del 39.74%, superando el umbral configurado del 30%.
+
+Las tres simulaciones en las que no se generó alerta fueron:
+
+Semilla
+
+Fracción de variables con drift
+
+13
+
+29.03%
+
+31
+
+25.81%
+
+45
+
+25.81%
+
+En estos casos, la proporción de variables detectadas no superó el umbral establecido, por lo que el sistema no activó la alerta. Este comportamiento es consistente con la regla de decisión implementada.
+
+Conclusión
+
+Los resultados muestran un comportamiento favorable del sistema de monitoreo en las condiciones experimentales evaluadas: no se observaron falsas alarmas en las 50 simulaciones con drift 0.0 y se obtuvo una tasa de detección del 94% en las 50 simulaciones con drift 0.3.
+
+Sin embargo, estos resultados no implican que la probabilidad real de falsas alarmas sea cero ni que la detección sea universal. Las simulaciones utilizan diferentes particiones y muestras provenientes del mismo dataset, por lo que evalúan la estabilidad del mecanismo bajo variaciones de muestreo, pero no su comportamiento frente a múltiples datasets independientes o escenarios reales de producción.
+
+Artefactos generados
+
+scripts/falsas_alarmas.py: ejecución del experimento.
+
+docs/graficos/resultados_falsas_alarmas.csv: resultados individuales de las simulaciones.
+
+docs/graficos/resumen_falsas_alarmas.csv: resumen estadístico por escenario.
+
 ## Tests (99, sin MLflow ni Prefect)
 
 | Qué pide la rúbrica | Dónde | Qué cubre |
@@ -114,6 +183,8 @@ Limitación de la emulación: el drift del target sube la tasa de default convir
 | Drift | `tests/test_monitoreo.py`, `tests/test_pruebas_drift.py` | Emulación, drift de evento, rechazo de lotes sin etiquetas, rendimiento, PSI/KS/chi-cuadrado, y una prueba de integración: sin drift casi nada se marca, con drift se supera el umbral, y más drift marca más variables |
 
 Verificado también en GitHub: el CI (`../.github/workflows/ci.yml`) corrió sobre el PR #9 y pasó.
+
+
 
 ## Decisiones técnicas adicionales
 
