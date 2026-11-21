@@ -18,6 +18,9 @@ mlruns/
 # Datasets descargados (no versionar, se descargan manualmente)
 actividad-*/data/*.csv
 
+# Reportes de drift generados por Evidently (actividad 3)
+actividad-*/reports/
+
 # OS / editor
 .DS_Store
 .vscode/

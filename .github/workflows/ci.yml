@@ -1,0 +1,27 @@
+name: Tests actividad 3
+
+# Extra opcional de actividad 3 (CI): corre los tests de actividad-3 en cada PR y en cada
+# push a master, sin necesitar MLflow ni Prefect levantados (ver docs/actividad-3.md, tarea 3).
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+defaults:
+  run:
+    working-directory: actividad-3
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install poetry
+      - run: poetry install --no-interaction
+      - name: Tests
+        env:
+          PYTHONUTF8: "1"
+        run: poetry run pytest -q
