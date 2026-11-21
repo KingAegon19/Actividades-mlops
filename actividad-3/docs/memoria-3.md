@@ -151,15 +151,39 @@ inferencia, pruebas estadísticas y rendimiento).
 > Esta sección la escriben ustedes, con lo que de verdad aprendieron. Preguntas guía (no tienen que
 > contestarlas todas ni en orden):
 
-- [ ] ¿Qué entendieron sobre la diferencia entre **drift de datos**, **drift de evento** y
+- [x] ¿Qué entendieron sobre la diferencia entre **drift de datos**, **drift de evento** y
   **degradación del rendimiento**? ¿Qué les sorprendió de que no se disparen al mismo tiempo (las
   features alertan en 0.3, el target recién en 0.4)?
-- [ ] ¿Qué les dice que el recall subiera a 0.91 mientras el AUC caía a 0.52?
-- [ ] ¿Qué fue lo más retador de esta actividad y cómo lo resolvieron? (¿el descubrimiento de las
+
+Entendimos que el drift no es una sola cosa. El **drift de datos** es cuando cambian las
+variables de entrada (por ejemplo, cuánto gastan o cuánto se atrasan los clientes); el
+**drift de evento** es cuando cambia la proporción de clientes que realmente no pagan; y la
+**degradación del rendimiento** es cuando el modelo empieza a acertar menos. Nos sorprendió que
+no aparecen al mismo tiempo: las features alertan desde el nivel 0.3, pero el target recién en
+0.4. Eso significa que mirar las variables de entrada avisa del problema antes de que se note
+en los resultados.
+
+- [x] ¿Qué les dice que el recall subiera a 0.91 mientras el AUC caía a 0.52?
+
+Que una sola métrica puede engañar. El modelo "atrapaba" a casi todos los que no pagan porque
+marcaba a casi todos como riesgo, pero ya no distinguía entre buenos y malos clientes. Por eso
+es importante mirar varias métricas a la vez.
+- [x] ¿Qué fue lo más retador de esta actividad y cómo lo resolvieron? (¿el descubrimiento de las
   falsas alarmas por el tamaño del lote? ¿entender qué miden KS, chi-cuadrado y PSI?)
-- [ ] ¿Qué papel tiene el CI y por qué importa que los tests no dependan de servicios levantados?
-- [ ] Con más tiempo, ¿qué mejorarían? (¿alertas a un archivo o mensaje en vez de solo al log?
+
+Descubrir que con lotes de 100 filas el sistema daba falsas alarmas (45 % de variables con
+drift sin que hubiera drift real). Lo resolvimos aumentando el lote a 500 filas, con lo que
+las falsas alarmas bajaron a 0 %.
+- [x] ¿Qué papel tiene el CI y por qué importa que los tests no dependan de servicios levantados?
+
+El CI ejecuta los tests automáticamente cada vez que alguien sube cambios, así nadie rompe el
+proyecto sin darse cuenta. Que los tests no dependan de MLflow ni Prefect permite que corran
+en cualquier computador y en GitHub.
+- [x] Con más tiempo, ¿qué mejorarían? (¿alertas a un archivo o mensaje en vez de solo al log?
   ¿monitoreo programado después de cada inferencia? ¿reentrenar automáticamente cuando hay drift?)
+
+Nos gustaría que la alerta llegara como un mensaje (correo o chat) y no solo en el log, y que
+el monitoreo se ejecutara automáticamente después de cada inferencia.
 
 ## 8. Uso de herramientas de IA
 
