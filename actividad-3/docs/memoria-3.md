@@ -190,9 +190,37 @@ el monitoreo se ejecutara automáticamente después de cada inferencia.
 > Esta sección es un requisito del curso y tiene que reflejar la experiencia real de cada
 > quien -- no la completa la IA por ustedes. Preguntas guía:
 
-- [ ] ¿Qué herramienta(s) usaron y para qué tareas concretas de esta actividad?
-- [ ] ¿Qué decidieron o hicieron ustedes sin IA? (qué señales de monitoreo construir, interpretar
+- [x] ¿Qué herramienta(s) usaron y para qué tareas concretas de esta actividad?
+
+Usamos Claude Code (Anthropic) como herramienta de IA a lo largo de la actividad: para
+construir la parte técnica (emulación de drift en la inferencia, pipelines de monitoreo con
+Prefect y Evidently, pruebas estadísticas, tests y CI), para entender a fondo qué mide cada
+prueba (KS, chi-cuadrado y PSI) y para apoyar la redacción de la memoria. También usamos
+Claude para revisar el trabajo frente a los entregables del enunciado y redactar un primer
+borrador de las conclusiones, que luego revisamos y ajustamos.
+- [x] ¿Qué decidieron o hicieron ustedes sin IA? (qué señales de monitoreo construir, interpretar
   los resultados, qué niveles de drift probar, qué tareas repartir al equipo...)
-- [ ] ¿Qué propuso la IA que ustedes revisaron, corrigieron o descartaron, y por qué? (por ejemplo,
+
+Decidimos qué señales de monitoreo construir (drift de features, drift de evento y
+rendimiento), qué niveles de drift probar (0.0, 0.3 y 0.6, más un barrido completo de 0.0 a
+1.0), interpretamos los resultados reales de cada corrida y organizamos la evidencia.
+También repartimos el trabajo en equipo: cada integrante trabajó en su propia rama e integró
+sus cambios mediante pull requests hacia la rama de la actividad.
+- [x] ¿Qué propuso la IA que ustedes revisaron, corrigieron o descartaron, y por qué? (por ejemplo,
   qué pruebas estadísticas usar para detectar el drift, o qué tanta profundidad darle a la actividad)
-- [ ] ¿Qué podrían explicar hoy sin la IA, de punta a punta, sobre cómo funciona el monitoreo?
+
+Lo principal fue el tamaño del lote: con el valor heredado de la actividad 2 (100 filas), el
+monitoreo marcaba 45 % de variables con drift aun sin drift real. Cuestionamos ese resultado,
+medimos el efecto con distintos tamaños y fijamos 500 filas, con lo que las falsas alarmas
+bajaron a 0 %. También revisamos las limitaciones de la emulación (por ejemplo, que el drift
+del target es ruido aleatorio) y decidimos documentarlas en vez de presentarlas como pérdida
+real de rendimiento. En la memoria, reorganizamos las conclusiones pregunta por pregunta en
+lugar de la lista que se había propuesto, para que fueran más claras.
+- [x] ¿Qué podrían explicar hoy sin la IA, de punta a punta, sobre cómo funciona el monitoreo?
+
+El monitoreo compara cada lote nuevo de datos con los datos de entrenamiento. Si la fracción
+de variables con drift supera el umbral configurado, el pipeline lanza una alerta. Con nivel
+de drift 0.0 no se genera ninguna alerta y con 0.6 sí. Además, el drift en las variables de
+entrada se detecta antes que el cambio en la variable objetivo, por lo que funciona como una
+señal temprana de que el modelo puede degradarse; y mirar solo el recall puede ocultar esa
+degradación, por eso se monitorea también el AUC.
