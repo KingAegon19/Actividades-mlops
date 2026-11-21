@@ -207,9 +207,11 @@ marcaba a casi todos como riesgo, pero ya no distinguía entre buenos y malos cl
 es importante mirar varias métricas a la vez.
 
 **Lo más retador de la actividad.**
-Descubrir que con lotes de 100 filas el sistema daba falsas alarmas (45 % de variables con
-drift sin que hubiera drift real). Lo resolvimos aumentando el lote a 500 filas, con lo que
-las falsas alarmas bajaron a 0 %.
+Entender que con lotes de 100 filas el sistema daba falsas alarmas (45 % de variables con
+drift sin que hubiera drift real). El problema lo detectó la IA al validar el pipeline; lo
+resolvimos aumentando el lote a 500 filas, con lo que las falsas alarmas bajaron a 0 %, y lo
+verificamos con el experimento de 50 semillas que implementó José (0 falsas alarmas en 50
+corridas).
 
 **El papel del CI.**
 El CI ejecuta los tests automáticamente cada vez que alguien sube cambios, así nadie rompe el
@@ -239,9 +241,10 @@ sus cambios mediante pull requests hacia la rama de la actividad.
 
 **Qué propuso la IA que revisamos, corregimos o descartamos.**
 Lo principal fue el tamaño del lote: con el valor heredado de la actividad 2 (100 filas), el
-monitoreo marcaba 45 % de variables con drift aun sin drift real. Cuestionamos ese resultado,
-medimos el efecto con distintos tamaños y fijamos 500 filas, con lo que las falsas alarmas
-bajaron a 0 %. También revisamos las limitaciones de la emulación (por ejemplo, que el drift
+monitoreo marcaba 45 % de variables con drift aun sin drift real. Ese problema lo detectó y lo
+midió la IA al validar el pipeline (probando varios tamaños de lote); nosotros revisamos el
+hallazgo, aprobamos fijar 500 filas y lo verificamos con el experimento de 50 semillas que
+implementó José (0 falsas alarmas en 50 corridas). También revisamos las limitaciones de la emulación (por ejemplo, que el drift
 del target es ruido aleatorio) y decidimos documentarlas en vez de presentarlas como pérdida
 real de rendimiento. En la memoria, reorganizamos las conclusiones pregunta por pregunta en
 lugar de la lista que se había propuesto, para que fueran más claras.
