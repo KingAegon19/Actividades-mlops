@@ -70,7 +70,7 @@ Corridas reales contra el champion vigente (`credit-default-modelo`, versión 2,
 | 0.0 | 0% | No | 21.0% (entrenamiento: 22.1%) | 0.5869 | No | 0.779 | No |
 | 0.6 | 61% | **Sí** | 30.0% | 0.0000 | **Sí** | 0.678 | **Sí** |
 
-Los dos reportes HTML son distintos entre sí -- confirma el criterio de éxito ("las ejecuciones con nivel 0.0 y 0.6 producen reportes de drift distintos"). Conservados como evidencia en [`docs/evidencia/`](./docs/evidencia/) (`reports/` se regenera en cada corrida y no se versiona). Con nivel 0.6 el log explica la alerta: las variables que más cambiaron son `PAY_6`, `PAY_4`, `PAY_2`, `meses_con_atraso` e `interaccion_atraso_x_limite` (estas dos últimas, derivadas: reflejan el drift de las crudas sin haberlas tocado).
+Los reportes HTML son distintos entre sí -- confirma el criterio de éxito ("las ejecuciones con nivel 0.0 y 0.6 producen reportes de drift distintos"). El nivel 0.3 que pide el enunciado también se corrió con los flows reales (no solo en proceso): 39% de features con drift (alerta), p=0.0721 en evento (sin alerta) y AUC del lote 0.696 (alerta), idéntico a lo que dio el barrido. Los tres reportes quedan como evidencia en [`docs/evidencia/`](./docs/evidencia/) (`reports/` se regenera en cada corrida y no se versiona). Con nivel 0.6 el log explica la alerta: las variables que más cambiaron son `PAY_6`, `PAY_4`, `PAY_2`, `meses_con_atraso` e `interaccion_atraso_x_limite` (estas dos últimas, derivadas: reflejan el drift de las crudas sin haberlas tocado).
 
 ### Barrido de niveles 0.0 a 1.0
 
