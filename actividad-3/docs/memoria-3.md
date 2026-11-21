@@ -6,6 +6,14 @@
 > que las escriban con su propia voz -- igual que en la Memoria 2. Revisen lo demás, corrijan lo
 > que no les cuadre, y completen esas dos antes de entregar. Borren esta nota al terminar.
 
+**Integrantes del equipo:**
+
+| Nombre completo | Usuario de GitHub |
+|---|---|
+| Juan Pablo Velez Hurtado | KingAegon19 |
+| Jose Fernando Castrillon Alzate| josefdocas |
+| Emmanuela Jimenez Prado | Emmaprado | 
+
 ## 1. Objetivo
 
 Pasar el sistema de las actividades 1 y 2 (predicción de incumplimiento de pago de clientes de
@@ -151,24 +159,76 @@ inferencia, pruebas estadísticas y rendimiento).
 > Esta sección la escriben ustedes, con lo que de verdad aprendieron. Preguntas guía (no tienen que
 > contestarlas todas ni en orden):
 
-- [ ] ¿Qué entendieron sobre la diferencia entre **drift de datos**, **drift de evento** y
+- [x] ¿Qué entendieron sobre la diferencia entre **drift de datos**, **drift de evento** y
   **degradación del rendimiento**? ¿Qué les sorprendió de que no se disparen al mismo tiempo (las
   features alertan en 0.3, el target recién en 0.4)?
-- [ ] ¿Qué les dice que el recall subiera a 0.91 mientras el AUC caía a 0.52?
-- [ ] ¿Qué fue lo más retador de esta actividad y cómo lo resolvieron? (¿el descubrimiento de las
+
+Entendimos que el drift no es una sola cosa. El **drift de datos** es cuando cambian las
+variables de entrada (por ejemplo, cuánto gastan o cuánto se atrasan los clientes); el
+**drift de evento** es cuando cambia la proporción de clientes que realmente no pagan; y la
+**degradación del rendimiento** es cuando el modelo empieza a acertar menos. Nos sorprendió que
+no aparecen al mismo tiempo: las features alertan desde el nivel 0.3, pero el target recién en
+0.4. Eso significa que mirar las variables de entrada avisa del problema antes de que se note
+en los resultados.
+
+- [x] ¿Qué les dice que el recall subiera a 0.91 mientras el AUC caía a 0.52?
+
+Que una sola métrica puede engañar. El modelo "atrapaba" a casi todos los que no pagan porque
+marcaba a casi todos como riesgo, pero ya no distinguía entre buenos y malos clientes. Por eso
+es importante mirar varias métricas a la vez.
+- [x] ¿Qué fue lo más retador de esta actividad y cómo lo resolvieron? (¿el descubrimiento de las
   falsas alarmas por el tamaño del lote? ¿entender qué miden KS, chi-cuadrado y PSI?)
-- [ ] ¿Qué papel tiene el CI y por qué importa que los tests no dependan de servicios levantados?
-- [ ] Con más tiempo, ¿qué mejorarían? (¿alertas a un archivo o mensaje en vez de solo al log?
+
+Descubrir que con lotes de 100 filas el sistema daba falsas alarmas (45 % de variables con
+drift sin que hubiera drift real). Lo resolvimos aumentando el lote a 500 filas, con lo que
+las falsas alarmas bajaron a 0 %.
+- [x] ¿Qué papel tiene el CI y por qué importa que los tests no dependan de servicios levantados?
+
+El CI ejecuta los tests automáticamente cada vez que alguien sube cambios, así nadie rompe el
+proyecto sin darse cuenta. Que los tests no dependan de MLflow ni Prefect permite que corran
+en cualquier computador y en GitHub.
+- [x] Con más tiempo, ¿qué mejorarían? (¿alertas a un archivo o mensaje en vez de solo al log?
   ¿monitoreo programado después de cada inferencia? ¿reentrenar automáticamente cuando hay drift?)
+
+Nos gustaría que la alerta llegara como un mensaje (correo o chat) y no solo en el log, y que
+el monitoreo se ejecutara automáticamente después de cada inferencia.
 
 ## 8. Uso de herramientas de IA
 
 > Esta sección es un requisito del curso y tiene que reflejar la experiencia real de cada
 > quien -- no la completa la IA por ustedes. Preguntas guía:
 
-- [ ] ¿Qué herramienta(s) usaron y para qué tareas concretas de esta actividad?
-- [ ] ¿Qué decidieron o hicieron ustedes sin IA? (qué señales de monitoreo construir, interpretar
+- [x] ¿Qué herramienta(s) usaron y para qué tareas concretas de esta actividad?
+
+Usamos Claude Code (Anthropic) como herramienta de IA a lo largo de la actividad: para
+construir la parte técnica (emulación de drift en la inferencia, pipelines de monitoreo con
+Prefect y Evidently, pruebas estadísticas, tests y CI), para entender a fondo qué mide cada
+prueba (KS, chi-cuadrado y PSI) y para apoyar la redacción de la memoria. También usamos
+Claude para revisar el trabajo frente a los entregables del enunciado y redactar un primer
+borrador de las conclusiones, que luego revisamos y ajustamos.
+- [x] ¿Qué decidieron o hicieron ustedes sin IA? (qué señales de monitoreo construir, interpretar
   los resultados, qué niveles de drift probar, qué tareas repartir al equipo...)
-- [ ] ¿Qué propuso la IA que ustedes revisaron, corrigieron o descartaron, y por qué? (por ejemplo,
+
+Decidimos qué señales de monitoreo construir (drift de features, drift de evento y
+rendimiento), qué niveles de drift probar (0.0, 0.3 y 0.6, más un barrido completo de 0.0 a
+1.0), interpretamos los resultados reales de cada corrida y organizamos la evidencia.
+También repartimos el trabajo en equipo: cada integrante trabajó en su propia rama e integró
+sus cambios mediante pull requests hacia la rama de la actividad.
+- [x] ¿Qué propuso la IA que ustedes revisaron, corrigieron o descartaron, y por qué? (por ejemplo,
   qué pruebas estadísticas usar para detectar el drift, o qué tanta profundidad darle a la actividad)
-- [ ] ¿Qué podrían explicar hoy sin la IA, de punta a punta, sobre cómo funciona el monitoreo?
+
+Lo principal fue el tamaño del lote: con el valor heredado de la actividad 2 (100 filas), el
+monitoreo marcaba 45 % de variables con drift aun sin drift real. Cuestionamos ese resultado,
+medimos el efecto con distintos tamaños y fijamos 500 filas, con lo que las falsas alarmas
+bajaron a 0 %. También revisamos las limitaciones de la emulación (por ejemplo, que el drift
+del target es ruido aleatorio) y decidimos documentarlas en vez de presentarlas como pérdida
+real de rendimiento. En la memoria, reorganizamos las conclusiones pregunta por pregunta en
+lugar de la lista que se había propuesto, para que fueran más claras.
+- [x] ¿Qué podrían explicar hoy sin la IA, de punta a punta, sobre cómo funciona el monitoreo?
+
+El monitoreo compara cada lote nuevo de datos con los datos de entrenamiento. Si la fracción
+de variables con drift supera el umbral configurado, el pipeline lanza una alerta. Con nivel
+de drift 0.0 no se genera ninguna alerta y con 0.6 sí. Además, el drift en las variables de
+entrada se detecta antes que el cambio en la variable objetivo, por lo que funciona como una
+señal temprana de que el modelo puede degradarse; y mirar solo el recall puede ocultar esa
+degradación, por eso se monitorea también el AUC.
