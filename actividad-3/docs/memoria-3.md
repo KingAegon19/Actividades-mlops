@@ -78,13 +78,14 @@ capa de monitoreo que le faltaba.
 - Pull request de la actividad: https://github.com/KingAegon19/Actividades-mlops/pull/9
 - Ejecución del CI en GitHub Actions (check `pruebas` en verde, 99 tests): https://github.com/KingAegon19/Actividades-mlops/actions/runs/43747585688
 - Decisiones, hallazgos y tablas completas de cada corrida real: [`PLAN.md`](../PLAN.md)
-- Reportes de Evidently de dos corridas reales, abribles en el navegador: [`evidencia/`](./evidencia/) -- sin drift ([`drift_features_nivel_0.0.html`](./evidencia/drift_features_nivel_0.0.html)) y con drift 0.6 ([`drift_features_nivel_0.6.html`](./evidencia/drift_features_nivel_0.6.html))
+- Reportes de Evidently de tres corridas reales de los flows, abribles en el navegador: [`evidencia/`](./evidencia/) -- sin drift ([`0.0`](./evidencia/drift_features_nivel_0.0.html)), drift 0.3 ([`0.3`](./evidencia/drift_features_nivel_0.3.html)) y drift 0.6 ([`0.6`](./evidencia/drift_features_nivel_0.6.html))
 - Barrido de niveles de drift (gráfico y tabla completa): [`graficos/`](./graficos/)
 - Experimento de robustez con 50 semillas (resultados por simulación y resumen): [`graficos/resultados_falsas_alarmas.csv`](./graficos/resultados_falsas_alarmas.csv) y [`graficos/resumen_falsas_alarmas.csv`](./graficos/resumen_falsas_alarmas.csv)
 - Pull requests del equipo, integrados a la rama de la actividad con el CI en verde: [#10 (memoria)](https://github.com/KingAegon19/Actividades-mlops/pull/10) y [#11 (experimento de falsas alarmas)](https://github.com/KingAegon19/Actividades-mlops/pull/11)
 
 Salida de terminal de las corridas reales contra el champion (extracto del log de Prefect, sin marcas
-de tiempo): primero con `nivel_drift: 0.0`, donde no salta ninguna alerta, y luego con `nivel_drift: 0.6`.
+de tiempo): primero con `nivel_drift: 0.0`, donde no salta ninguna alerta; luego con `0.3`, donde ya
+alertan las features y el rendimiento pero todavía no el target; y por último con `0.6`, donde alertan las tres.
 
 ```text
 # nivel_drift = 0.0
@@ -97,6 +98,22 @@ Tasa de default: entrenamiento 22.1%, lote 21.0% (p-valor 0.5869)
 Sin alerta: drift del target (p-valor 0.5869 >= 0.05)
 AUC del lote 0.7792 vs referencia 0.7749 (caída -0.0043); recall del lote 0.6476
 Sin alerta: el AUC cayó -0.0043 (tolerancia 0.05)
+
+# nivel_drift = 0.3
+Lote de 500 clientes tomado de prueba, con nivel de drift 0.3
+500 predicciones guardadas en data\prediccion_2026-11-21.csv (probabilidad media = 0.5303)
+Pruebas estadísticas: 13 de 31 variables con drift. Las que más cambiaron:
+  - PAY_6: PSI=15.94 (importante), chi2 p=0.0000
+  - PAY_AMT4: PSI=8.61 (importante), ks p=0.0000
+  - BILL_AMT5: PSI=7.09 (importante), ks p=0.0000
+  - interaccion_atraso_x_utilizacion: PSI=7.07 (importante), ks p=0.0000
+  - BILL_AMT4: PSI=7.07 (importante), ks p=0.0000
+ALERTA: drift de features en 39% de las variables (umbral 30%)
+Pruebas estadísticas: 42% de las variables con drift -> coinciden con Evidently
+Tasa de default: entrenamiento 22.1%, lote 25.6% (p-valor 0.0721)
+Sin alerta: drift del target (p-valor 0.0721 >= 0.05)
+AUC del lote 0.6957 vs referencia 0.7749 (caída +0.0792); recall del lote 0.7969
+ALERTA: el AUC cayó 0.0792 (tolerancia 0.05)
 
 # nivel_drift = 0.6
 Lote de 500 clientes tomado de prueba, con nivel de drift 0.6
