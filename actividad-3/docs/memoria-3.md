@@ -6,6 +6,14 @@
 > que las escriban con su propia voz -- igual que en la Memoria 2. Revisen lo demás, corrijan lo
 > que no les cuadre, y completen esas dos antes de entregar. Borren esta nota al terminar.
 
+**Integrantes del equipo:**
+
+| Nombre completo | Usuario de GitHub |
+|---|---|
+| Juan Pablo Velez Hurtado | KingAegon19 |
+| jose Fernando Castrillon Alzate| josefdocas |
+| Emmanuela Jimenez Prado | Emmaprado | 
+
 ## 1. Objetivo
 
 Pasar el sistema de las actividades 1 y 2 (predicción de incumplimiento de pago de clientes de
